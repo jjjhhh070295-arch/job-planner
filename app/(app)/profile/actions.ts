@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
 
-export type FormState = { ok: boolean; message?: string } | null;
+import type { FormState } from "@/lib/form-state";
 
 /**
  * Server Action 은 인증된 화면에서만 호출된다고 가정하면 안 된다.

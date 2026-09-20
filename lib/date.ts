@@ -1,3 +1,46 @@
+/**
+ * 서버 시간대는 Vercel 에서 UTC 다. 그대로 표시하면 한국 사용자에게 9시간 어긋난
+ * 날짜가 보이므로, 날짜/시각 표시는 항상 서울 기준으로 계산한다.
+ */
+export const TIME_ZONE = "Asia/Seoul";
+
+/** 서울 기준 "YYYY-MM-DD" */
+function seoulDateString(date: Date): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+}
+
+/** timestamptz -> "2026.10.15 18:00" (서울 기준) */
+export function formatDeadline(iso: string): string {
+  const date = new Date(iso);
+  const parts = new Intl.DateTimeFormat("ko-KR", {
+    timeZone: TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(date);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+  return `${get("year")}.${get("month")}.${get("day")} ${get("hour")}:${get("minute")}`;
+}
+
+/** 서울 기준 날짜로 따진 남은 일수. */
+export function daysUntilTimestamp(iso: string): number {
+  const target = seoulDateString(new Date(iso));
+  const today = seoulDateString(new Date());
+  return Math.round(
+    (new Date(`${target}T00:00:00Z`).getTime() -
+      new Date(`${today}T00:00:00Z`).getTime()) /
+      86_400_000,
+  );
+}
+
 /** "2024-03-01" -> "2024.03" */
 export function formatYearMonth(value: string | null | undefined): string {
   if (!value) return "";

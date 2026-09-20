@@ -2,28 +2,28 @@
 
 import { Trash2 } from "lucide-react";
 
-import { removeProfileRow } from "@/app/(app)/profile/actions";
-
 /** 확인 없이 지우면 실수로 날리기 쉬워서 한 번 물어본다. */
 export function DeleteRowButton({
+  action,
   table,
   id,
   label,
 }: {
-  table: string;
+  action: (formData: FormData) => Promise<void>;
+  table?: string;
   id: string;
   label: string;
 }) {
   return (
     <form
-      action={removeProfileRow}
+      action={action}
       onSubmit={(event) => {
         if (!window.confirm(`"${label}" 을(를) 지울까요? 되돌릴 수 없습니다.`)) {
           event.preventDefault();
         }
       }}
     >
-      <input type="hidden" name="table" value={table} />
+      {table ? <input type="hidden" name="table" value={table} /> : null}
       <input type="hidden" name="id" value={id} />
       <button
         type="submit"

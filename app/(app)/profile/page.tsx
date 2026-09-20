@@ -1,4 +1,9 @@
-import { addEducation, addExperience, addSpec } from "./actions";
+import {
+  addEducation,
+  addExperience,
+  addSpec,
+  removeProfileRow,
+} from "./actions";
 import { DeleteRowButton } from "@/components/delete-row-button";
 import { PageShell } from "@/components/page-shell";
 import { RecordForm, type Field } from "@/components/record-form";
@@ -196,6 +201,7 @@ export default async function ProfilePage() {
                   ) : null}
                 </div>
                 <DeleteRowButton
+                  action={removeProfileRow}
                   table="education"
                   id={row.id}
                   label={row.school}
@@ -262,6 +268,7 @@ export default async function ProfilePage() {
                     </p>
                   </div>
                   <DeleteRowButton
+                    action={removeProfileRow}
                     table="user_specs"
                     id={row.id}
                     label={row.name}
@@ -343,6 +350,7 @@ export default async function ProfilePage() {
                   </dl>
                 </div>
                 <DeleteRowButton
+                  action={removeProfileRow}
                   table="experiences"
                   id={row.id}
                   label={row.title}

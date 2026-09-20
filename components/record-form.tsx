@@ -3,7 +3,7 @@
 import { useActionState, useEffect, useRef } from "react";
 import { ChevronDown } from "lucide-react";
 
-import type { FormState } from "@/app/(app)/profile/actions";
+import type { FormState } from "@/lib/form-state";
 
 export type Field = {
   name: string;
