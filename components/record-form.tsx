@@ -8,8 +8,10 @@ import type { FormState } from "@/lib/form-state";
 export type Field = {
   name: string;
   label: string;
-  type?: "text" | "date" | "textarea" | "select";
+  type?: "text" | "date" | "textarea" | "select" | "number";
   options?: string[];
+  /** options 대신 값과 표시 이름이 다를 때 쓴다 (예: 기업 선택) */
+  choices?: { value: string; label: string }[];
   required?: boolean;
   placeholder?: string;
   hint?: string;
@@ -79,18 +81,30 @@ export function RecordForm({
               ) : field.type === "select" ? (
                 <select
                   name={field.name}
-                  defaultValue={field.options?.[0]}
+                  defaultValue={field.choices?.[0]?.value ?? field.options?.[0]}
                   className={inputClass}
                 >
-                  {field.options?.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
+                  {field.choices
+                    ? field.choices.map((choice) => (
+                        <option key={choice.value} value={choice.value}>
+                          {choice.label}
+                        </option>
+                      ))
+                    : field.options?.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
                 </select>
               ) : (
                 <input
-                  type={field.type === "date" ? "date" : "text"}
+                  type={
+                    field.type === "date"
+                      ? "date"
+                      : field.type === "number"
+                        ? "number"
+                        : "text"
+                  }
                   name={field.name}
                   required={field.required}
                   placeholder={field.placeholder}
