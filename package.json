@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:status": "node --env-file=.env.local scripts/migrate.mjs status",
+    "db:migrate": "node --env-file=.env.local scripts/migrate.mjs migrate",
+    "db:mark": "node --env-file=.env.local scripts/migrate.mjs mark"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
@@ -23,6 +26,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.3.5",
+    "pg": "^8.23.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
