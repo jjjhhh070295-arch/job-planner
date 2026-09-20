@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { KeyRound, ShieldUser } from "lucide-react";
+import { KeyRound, Route, ShieldUser } from "lucide-react";
 
 import { LogoutButton } from "@/components/logout-button";
 import { NAV_ITEMS, isActive } from "@/components/nav-items";
@@ -47,6 +47,13 @@ export function Sidebar({ displayName, username, isAdmin }: Props) {
       </nav>
 
       <div className="flex flex-col gap-1 border-t border-gray-200 p-3">
+        <Link
+          href="/roadmap"
+          className="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-200"
+        >
+          <Route className="size-4 shrink-0" aria-hidden />
+          목표 로드맵
+        </Link>
         {isAdmin ? (
           <Link
             href="/admin/users"

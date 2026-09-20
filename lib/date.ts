@@ -14,6 +14,21 @@ function seoulDateString(date: Date): string {
   }).format(date);
 }
 
+/** 서울 기준 오늘 날짜 "YYYY-MM-DD" */
+export function todayInSeoul(): string {
+  return seoulDateString(new Date());
+}
+
+/** 그 날짜가 속한 주의 월요일 "YYYY-MM-DD" */
+export function mondayOf(dateString: string): string {
+  const date = new Date(`${dateString}T00:00:00Z`);
+  // getUTCDay: 0=일요일. 월요일을 주의 시작으로 본다.
+  const weekday = date.getUTCDay();
+  const offset = weekday === 0 ? -6 : 1 - weekday;
+  date.setUTCDate(date.getUTCDate() + offset);
+  return date.toISOString().slice(0, 10);
+}
+
 /** timestamptz -> "2026.10.15 18:00" (서울 기준) */
 export function formatDeadline(iso: string): string {
   const date = new Date(iso);
