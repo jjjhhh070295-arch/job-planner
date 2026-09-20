@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
-import { UserList } from "@/app/admin/users/user-list";
+import { UserList } from "./user-list";
 import { getCurrentProfile } from "@/lib/auth/current-user";
 import { createAdminClient, isAdminUsername } from "@/lib/supabase/admin";
 

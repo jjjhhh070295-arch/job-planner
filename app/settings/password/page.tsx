@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { PasswordForm } from "@/app/settings/password/password-form";
+import { PasswordForm } from "./password-form";
 import { getCurrentProfile } from "@/lib/auth/current-user";
 
 export default async function PasswordSettingsPage() {
