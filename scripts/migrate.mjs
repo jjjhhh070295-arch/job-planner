@@ -29,7 +29,7 @@ const CREATE_LEDGER = `
  * Supabase 는 프로젝트에 따라 인증서 검증이 되기도 하고 안 되기도 한다.
  * 먼저 검증하는 쪽으로 붙어 보고, 인증서 문제일 때만 검증을 완화해 재시도한다.
  */
-async function connect() {
+async function connectOnce() {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) {
     throw new Error(".env.local 에 DATABASE_URL 이 없습니다.");
@@ -56,6 +56,29 @@ async function connect() {
     await relaxed.connect();
     return relaxed;
   }
+}
+
+/**
+ * Supabase 풀러는 간헐적으로 timeout 이나 인증 실패를 돌려준다.
+ * 같은 설정으로 바로 다시 붙으면 대개 성공하므로 몇 번 재시도한다.
+ */
+async function connect(attempts = 4) {
+  let lastError;
+  for (let i = 1; i <= attempts; i += 1) {
+    try {
+      return await connectOnce();
+    } catch (error) {
+      lastError = error;
+      const transient =
+        /timeout|password authentication failed|ECONNRESET|ETIMEDOUT|EAI_AGAIN|terminating connection/i.test(
+          error.message,
+        );
+      if (!transient || i === attempts) throw error;
+      console.warn(`! 접속 실패 (${i}/${attempts}) - 잠시 후 재시도합니다.`);
+      await new Promise((resolve) => setTimeout(resolve, 1500 * i));
+    }
+  }
+  throw lastError;
 }
 
 async function listMigrationFiles() {
