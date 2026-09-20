@@ -1,5 +1,11 @@
 import { NextResponse } from "next/server";
 
+import {
+  clientIp,
+  isRateLimited,
+  rateLimitMessage,
+  recordAttempt,
+} from "@/lib/auth/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   isValidDisplayName,
@@ -26,6 +32,15 @@ export async function POST(request: Request) {
   const displayName = String(body.displayName ?? "").trim();
   const password = String(body.password ?? "");
   const inviteCode = normalizeInviteCode(String(body.inviteCode ?? ""));
+
+  // 초대 코드를 기계로 훑는 것을 막는다. IP 기준으로만 센다.
+  const ip = `ip:${clientIp(request)}`;
+  if (await isRateLimited("invite", [ip])) {
+    return NextResponse.json(
+      { message: rateLimitMessage("invite") },
+      { status: 429 },
+    );
+  }
 
   if (!isValidUsername(username)) {
     return bad("아이디는 영문 소문자로 시작하는 영문·숫자·밑줄 3~20자여야 합니다.");
@@ -68,6 +83,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: "가입 처리 중 오류가 발생했습니다." }, { status: 500 });
   }
   if (consumed !== true) {
+    await recordAttempt("invite", ip, false);
     return bad("초대 코드가 올바르지 않거나, 사용 가능 횟수가 모두 소진되었습니다.");
   }
 
@@ -104,5 +120,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: "가입 처리 중 오류가 발생했습니다." }, { status: 500 });
   }
 
+  await recordAttempt("invite", ip, true);
   return NextResponse.json({ ok: true });
 }

@@ -22,9 +22,14 @@ export async function createClient() {
             for (const { name, value, options } of cookiesToSet) {
               cookieStore.set(name, value, options);
             }
-          } catch {
+          } catch (error) {
             // Server Component 안에서는 쿠키를 쓸 수 없어 여기로 온다.
-            // 세션 갱신은 proxy.ts 가 대신 처리하므로 무시해도 안전하다.
+            // 세션 갱신은 proxy.ts 가 대신 처리하므로 그 경우는 무시해도 안전하다.
+            // 다만 Route Handler 에서 나면 로그인이 안 되는 진짜 문제이므로 남겨 둔다.
+            console.warn(
+              "[supabase/server] 쿠키 쓰기 실패:",
+              error instanceof Error ? error.message : error,
+            );
           }
         },
       },

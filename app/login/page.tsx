@@ -4,9 +4,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
-import { normalizeUsername, usernameToEmail } from "@/lib/auth/username";
-import { createClient } from "@/lib/supabase/client";
-
 export default function LoginPage() {
   const router = useRouter();
   const [username, setUsername] = useState("");
@@ -19,16 +16,16 @@ export default function LoginPage() {
     setError(null);
     setPending(true);
 
-    const supabase = createClient();
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: usernameToEmail(normalizeUsername(username)),
-      password,
+    // 로그인은 서버 경로를 거친다. 실패 횟수를 세어 무차별 대입을 막기 위함.
+    const response = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
     });
 
-    if (signInError) {
-      // 아이디가 없는 건지 비밀번호가 틀린 건지 구분해 주지 않는다.
-      // 구분하면 "이 아이디는 존재한다"는 정보가 새어 나간다.
-      setError("아이디 또는 비밀번호가 올바르지 않습니다.");
+    if (!response.ok) {
+      const data = await response.json().catch(() => null);
+      setError(data?.message ?? "로그인에 실패했습니다.");
       setPending(false);
       return;
     }

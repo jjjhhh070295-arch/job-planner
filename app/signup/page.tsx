@@ -7,10 +7,7 @@ import { useState, type FormEvent } from "react";
 import {
   DISPLAY_NAME_RULE_TEXT,
   USERNAME_RULE_TEXT,
-  normalizeUsername,
-  usernameToEmail,
 } from "@/lib/auth/username";
-import { createClient } from "@/lib/supabase/client";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -49,13 +46,13 @@ export default function SignupPage() {
     }
 
     // 가입에 성공했으면 바로 로그인시킨다.
-    const supabase = createClient();
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: usernameToEmail(normalizeUsername(username)),
-      password,
+    const loginResponse = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
     });
 
-    if (signInError) {
+    if (!loginResponse.ok) {
       setError(
         "가입은 됐지만 자동 로그인에 실패했습니다. 로그인 화면에서 다시 시도해 주세요.",
       );
