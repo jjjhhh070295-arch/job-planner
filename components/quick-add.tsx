@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import {
   BookOpenCheck,
@@ -13,7 +14,7 @@ import {
 // CLAUDE.md 4장의 빠른 추가 4종.
 // 해당 기능이 아직 없는 항목은 눌러도 동작하지 않게 두고, 기능이 붙을 때 href 를 채운다.
 const QUICK_ITEMS = [
-  { label: "공고 붙여넣기", icon: ClipboardPaste, href: null },
+  { label: "공고 붙여넣기", icon: ClipboardPaste, href: "/applications/parse" },
   { label: "할 일", icon: CheckSquare, href: null },
   { label: "면접 기록", icon: MessagesSquare, href: null },
   { label: "공부 기록", icon: BookOpenCheck, href: null },
@@ -54,19 +55,36 @@ export function QuickAdd() {
           </p>
           {QUICK_ITEMS.map((item) => {
             const Icon = item.icon;
-            return (
-              <button
-                key={item.label}
-                type="button"
-                disabled={item.href === null}
-                className="flex h-11 w-full items-center gap-3 rounded-lg px-3 text-left text-sm hover:bg-muted-100 disabled:cursor-not-allowed disabled:text-ink-400 disabled:hover:bg-transparent"
-              >
+            const inner = (
+              <>
                 <Icon className="size-4 shrink-0" aria-hidden />
                 <span className="flex-1">{item.label}</span>
                 {item.href === null ? (
                   <span className="text-[11px] text-ink-400">준비 중</span>
                 ) : null}
+              </>
+            );
+            const shared =
+              "flex h-11 w-full items-center gap-3 rounded-lg px-3 text-left text-sm";
+
+            return item.href === null ? (
+              <button
+                key={item.label}
+                type="button"
+                disabled
+                className={shared + " cursor-not-allowed text-ink-400"}
+              >
+                {inner}
               </button>
+            ) : (
+              <Link
+                key={item.label}
+                href={item.href}
+                onClick={() => setOpen(false)}
+                className={shared + " hover:bg-muted-100"}
+              >
+                {inner}
+              </Link>
             );
           })}
         </div>
