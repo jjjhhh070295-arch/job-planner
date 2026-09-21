@@ -1,5 +1,7 @@
 "use client";
 
+import { inputClass } from "@/components/ui/primitives";
+
 export type Field = {
   name: string;
   label: string;
@@ -14,8 +16,7 @@ export type Field = {
   wide?: boolean;
 };
 
-export const inputClass =
-  "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500";
+export { inputClass };
 
 /**
  * 추가 폼과 수정 폼이 같은 입력 칸을 쓴다.
@@ -40,15 +41,17 @@ export function FormFields({
             (field.wide || field.type === "textarea" ? "sm:col-span-2" : "")
           }
         >
-          <span className="text-xs font-medium text-gray-700">
+          <span className="text-sm font-medium text-ink-700">
             {field.label}
-            {field.required ? <span className="text-red-500"> *</span> : null}
+            {field.required ? (
+              <span className="text-danger-600"> *</span>
+            ) : null}
           </span>
 
           {field.type === "textarea" ? (
             <textarea
               name={field.name}
-              rows={3}
+              rows={4}
               required={field.required}
               placeholder={field.placeholder}
               defaultValue={initial(field.name) ?? ""}
@@ -62,7 +65,7 @@ export function FormFields({
                 field.choices?.[0]?.value ??
                 field.options?.[0]
               }
-              className={inputClass}
+              className={inputClass + " h-11"}
             >
               {field.choices
                 ? field.choices.map((choice) => (
@@ -85,16 +88,17 @@ export function FormFields({
                     ? "number"
                     : "text"
               }
+              inputMode={field.type === "number" ? "numeric" : undefined}
               name={field.name}
               required={field.required}
               placeholder={field.placeholder}
               defaultValue={initial(field.name) ?? ""}
-              className={inputClass}
+              className={inputClass + " h-11"}
             />
           )}
 
           {field.hint ? (
-            <span className="text-xs text-gray-400">{field.hint}</span>
+            <span className="text-xs text-ink-400">{field.hint}</span>
           ) : null}
         </label>
       ))}

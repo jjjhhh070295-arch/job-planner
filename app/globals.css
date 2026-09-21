@@ -1,26 +1,97 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* ============================================================
+   색은 파란색 한 가지를 중심으로 쓴다.
+   상태 색은 셋뿐이다 — 빨강(마감 임박), 초록(합격), 회색(종료).
+   그 외 용도로 색을 늘리지 않는다. 색이 많아지면 의미가 흐려진다.
+   ============================================================ */
+@theme {
+  --color-brand-50: #eff6ff;
+  --color-brand-100: #dbeafe;
+  --color-brand-200: #bfdbfe;
+  --color-brand-500: #3b82f6;
+  --color-brand-600: #2563eb;
+  --color-brand-700: #1d4ed8;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-ink-900: #0f172a;
+  --color-ink-700: #334155;
+  --color-ink-500: #64748b;
+  --color-ink-400: #94a3b8;
+
+  --color-line: #e2e8f0;
+  --color-surface: #ffffff;
+  --color-canvas: #f8fafc;
+
+  /* 마감 임박 */
+  --color-danger-50: #fef2f2;
+  --color-danger-100: #fee2e2;
+  --color-danger-600: #dc2626;
+  --color-danger-700: #b91c1c;
+
+  /* 합격 */
+  --color-success-50: #f0fdf4;
+  --color-success-100: #dcfce7;
+  --color-success-700: #15803d;
+
+  /* 종료 / 중립 */
+  --color-muted-100: #f1f5f9;
+  --color-muted-600: #475569;
+
   --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  html {
+    /* 가로 모드로 돌렸을 때 아이폰이 글자를 키우는 것을 막는다 */
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background: var(--color-canvas);
+    color: var(--color-ink-900);
+    font-family: var(--font-sans), system-ui, sans-serif;
+  }
+
+  /* 아이폰 사파리는 16px 미만 입력칸에 초점이 가면 화면을 확대한다.
+     확대되면 레이아웃이 깨져 보이므로 모든 입력칸을 16px 이상으로 둔다. */
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  /* 누르는 영역은 최소 44px. 아이폰 사람 인터페이스 지침 기준. */
+  button,
+  a[role="button"],
+  summary {
+    touch-action: manipulation;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer utilities {
+  /* 아이폰 하단 홈바(제스처 바) 영역 */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .mb-safe {
+    margin-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .bottom-safe {
+    bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /* 가로 스크롤 칩 줄에서 스크롤바를 숨긴다 */
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* 최소 터치 영역 */
+  .tap {
+    min-height: 44px;
+    min-width: 44px;
+  }
 }

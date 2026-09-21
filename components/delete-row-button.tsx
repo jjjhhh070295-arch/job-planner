@@ -2,6 +2,8 @@
 
 import { Trash2 } from "lucide-react";
 
+import { btnIcon } from "@/components/ui/primitives";
+
 /** 확인 없이 지우면 실수로 날리기 쉬워서 한 번 물어본다. */
 export function DeleteRowButton({
   action,
@@ -28,7 +30,7 @@ export function DeleteRowButton({
       <button
         type="submit"
         aria-label={`${label} 삭제`}
-        className="rounded-md p-2 text-gray-400 hover:bg-red-50 hover:text-red-600"
+        className={btnIcon + " hover:bg-danger-50 hover:text-danger-600"}
       >
         <Trash2 className="size-4" aria-hidden />
       </button>

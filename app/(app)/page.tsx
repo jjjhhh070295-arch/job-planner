@@ -1,25 +1,32 @@
 import Link from "next/link";
 
-import { toggleTask, toggleTaskToday } from "./roadmap/actions";
-import { DashboardCard, EmptyCard } from "@/components/dashboard-card";
+import { toggleTask } from "./roadmap/actions";
+import { MiniCalendar } from "@/components/mini-calendar";
 import { PageShell } from "@/components/page-shell";
-import { TaskCheckbox, TodayToggle } from "@/components/roadmap-controls";
-import { isClosed } from "@/lib/application-status";
+import { TaskCheckbox } from "@/components/roadmap-controls";
 import {
-  dDayLabel,
+  Card,
+  CardHeader,
+  EmptyState,
+  StatCard,
+  Tag,
+} from "@/components/ui/primitives";
+import { isClosed } from "@/lib/application-status";
+import { currentMonth, itemTone, type CalendarItem } from "@/lib/calendar";
+import {
   daysUntil,
   daysUntilTimestamp,
   formatDeadline,
   mondayOf,
+  toDateInput,
+  toTimeInput,
   todayInSeoul,
-  urgencyOf,
 } from "@/lib/date";
 import { getCurrentProfile } from "@/lib/auth/current-user";
-import { loadProgressCounts, type Goal, type MilestoneRow, type Task } from "@/lib/queries";
-import { currentValue, percentOf } from "@/lib/roadmap";
+import type { Task } from "@/lib/queries";
 import { createClient } from "@/lib/supabase/server";
 
-type DeadlineItem = {
+type AppRow = {
   id: string;
   company: string;
   role: string | null;
@@ -27,358 +34,363 @@ type DeadlineItem = {
   deadline: string | null;
 };
 
-type SpecItem = {
+type SpecRow = {
   id: string;
   name: string;
   score_or_grade: string | null;
   expiry_date: string | null;
 };
 
-/** 마감·유효기간이 며칠 안 남았을 때만 대시보드에 올린다. */
+type EventRow = {
+  id: string;
+  title: string;
+  kind: string;
+  start_at: string;
+  all_day: boolean;
+};
+
+/** 마감 임박 목록에 올릴 범위 */
 const DEADLINE_WINDOW_DAYS = 30;
+const URGENT_DAYS = 3;
 const EXPIRY_WINDOW_DAYS = 90;
 
-function MiniProgress({ percent }: { percent: number }) {
-  return (
-    <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-200">
-      <div
-        className={"h-full " + (percent >= 100 ? "bg-green-500" : "bg-blue-600")}
-        style={{ width: `${percent}%` }}
-      />
-    </div>
-  );
-}
-
-function TaskLine({ task }: { task: Task }) {
-  const overdue =
-    !task.done && task.due_date !== null && task.due_date < todayInSeoul();
-
-  return (
-    <li className="flex items-center gap-1">
-      <TaskCheckbox
-        action={toggleTask}
-        id={task.id}
-        done={task.done}
-        title={task.title}
-      />
-      <span className="min-w-0 flex-1 truncate text-sm text-gray-800">
-        {task.title}
-      </span>
-      {overdue ? (
-        <span className="shrink-0 text-xs font-medium text-red-600">지남</span>
-      ) : null}
-      <TodayToggle
-        action={toggleTaskToday}
-        id={task.id}
-        isToday={task.is_today}
-      />
-    </li>
-  );
+function addDays(date: string, days: number): string {
+  const d = new Date(`${date}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
 }
 
 export default async function HomePage() {
   const profile = await getCurrentProfile();
   const supabase = await createClient();
+
   const today = todayInSeoul();
+  const weekStart = mondayOf(today);
+  const weekEnd = addDays(weekStart, 6);
+  const month = currentMonth();
 
-  const [goalResult, milestoneResult, taskResult, appResult, specResult, counts] =
-    await Promise.all([
-      supabase.from("goals").select("*").order("due_date", { nullsFirst: false }),
-      supabase
-        .from("milestones")
-        .select("*")
-        .order("month", { nullsFirst: false }),
-      supabase
-        .from("tasks")
-        .select("*")
-        .eq("done", false)
-        .order("due_date", { nullsFirst: false }),
-      supabase
-        .from("applications")
-        .select("id, company, role, status, deadline")
-        .not("deadline", "is", null)
-        .order("deadline", { ascending: true }),
-      supabase
-        .from("user_specs")
-        .select("id, name, score_or_grade, expiry_date")
-        .not("expiry_date", "is", null)
-        .order("expiry_date", { ascending: true }),
-      loadProgressCounts(supabase),
-    ]);
+  const [appResult, taskResult, specResult, eventResult] = await Promise.all([
+    supabase.from("applications").select("id, company, role, status, deadline"),
+    supabase.from("tasks").select("*"),
+    supabase
+      .from("user_specs")
+      .select("id, name, score_or_grade, expiry_date")
+      .not("expiry_date", "is", null)
+      .order("expiry_date"),
+    supabase
+      .from("events")
+      .select("id, title, kind, start_at, all_day")
+      .order("start_at"),
+  ]);
 
-  const goals = (goalResult.data ?? []) as Goal[];
-  const milestones = (milestoneResult.data ?? []) as MilestoneRow[];
-  const openTasks = (taskResult.data ?? []) as Task[];
+  const applications = (appResult.data ?? []) as AppRow[];
+  const tasks = (taskResult.data ?? []) as Task[];
+  const specs = (specResult.data ?? []) as SpecRow[];
+  const events = (eventResult.data ?? []) as EventRow[];
 
-  const thisMonday = mondayOf(today);
-  const todayTasks = openTasks.filter((task) => task.is_today);
-  const weekTasks = openTasks.filter(
-    (task) => !task.is_today && task.week_of === thisMonday,
+  /* ---------------- 요약 숫자 4개 ---------------- */
+
+  const inProgress = applications.filter((a) => !isClosed(a.status));
+
+  const dueThisWeek = inProgress.filter((a) => {
+    if (!a.deadline) return false;
+    const d = toDateInput(a.deadline);
+    return d >= weekStart && d <= weekEnd;
+  });
+
+  // 서류 합격률: 제출한 것 중 서류를 통과한 비율.
+  // 분모는 "작성 중"을 뺀 전부(탈락 포함), 분자는 서류 합격 이후 단계.
+  const submitted = applications.filter((a) => a.status !== "작성 중");
+  const passedDocs = applications.filter((a) =>
+    ["서류 합격", "면접", "최종 합격"].includes(a.status),
   );
+  const passRate =
+    submitted.length === 0
+      ? null
+      : Math.round((passedDocs.length / submitted.length) * 100);
 
-  // 끝난 전형과 이미 지난 마감은 뺀다. 남은 날이 적은 순.
-  const upcoming = ((appResult.data ?? []) as DeadlineItem[])
-    .filter((item) => item.deadline !== null && !isClosed(item.status))
-    .map((item) => ({ ...item, days: daysUntilTimestamp(item.deadline!) }))
-    .filter((item) => item.days >= 0 && item.days <= DEADLINE_WINDOW_DAYS)
-    .slice(0, 5);
+  const weekTasks = tasks.filter((t) => t.week_of === weekStart);
+  const weekDone = weekTasks.filter((t) => t.done);
+  const doneRate =
+    weekTasks.length === 0
+      ? null
+      : Math.round((weekDone.length / weekTasks.length) * 100);
 
-  // 이미 만료됐거나 곧 만료되는 것만.
-  const expiring = ((specResult.data ?? []) as SpecItem[])
-    .map((item) => ({ ...item, days: daysUntil(item.expiry_date!) }))
-    .filter((item) => item.days <= EXPIRY_WINDOW_DAYS)
-    .slice(0, 5);
+  /* ---------------- 날짜별 항목 (오늘 일정 + 미니 달력) ---------------- */
 
-  const hasRoadmap = goals.length > 0 || milestones.length > 0;
+  const byDate = new Map<string, CalendarItem[]>();
+  const urgentDates = new Set<string>();
+  const push = (date: string, item: CalendarItem, urgent = false) => {
+    const list = byDate.get(date) ?? [];
+    list.push(item);
+    byDate.set(date, list);
+    if (urgent) urgentDates.add(date);
+  };
+
+  for (const app of inProgress) {
+    if (!app.deadline) continue;
+    const date = toDateInput(app.deadline);
+    const days = daysUntilTimestamp(app.deadline);
+    push(
+      date,
+      {
+        id: `app-${app.id}`,
+        type: "마감",
+        label: app.company,
+        time: toTimeInput(app.deadline),
+      },
+      days >= 0 && days <= URGENT_DAYS,
+    );
+  }
+
+  for (const task of tasks) {
+    if (task.done || !task.due_date) continue;
+    push(task.due_date, {
+      id: `task-${task.id}`,
+      type: "할 일",
+      label: task.title,
+    });
+  }
+
+  for (const event of events) {
+    push(toDateInput(event.start_at), {
+      id: `event-${event.id}`,
+      type: (event.kind as CalendarItem["type"]) ?? "개인",
+      label: event.title,
+      time: event.all_day ? undefined : toTimeInput(event.start_at),
+    });
+  }
+
+  const todayItems = byDate.get(today) ?? [];
+  const todayTasks = tasks.filter((t) => t.is_today && !t.done);
+
+  /* ---------------- 마감 임박 ---------------- */
+
+  const upcoming = inProgress
+    .filter((a) => a.deadline)
+    .map((a) => ({ ...a, days: daysUntilTimestamp(a.deadline!) }))
+    .filter((a) => a.days >= 0 && a.days <= DEADLINE_WINDOW_DAYS)
+    .sort((a, b) => a.days - b.days)
+    .slice(0, 6);
+
+  const expiring = specs
+    .map((s) => ({ ...s, days: daysUntil(s.expiry_date!) }))
+    .filter((s) => s.days <= EXPIRY_WINDOW_DAYS)
+    .sort((a, b) => a.days - b.days)
+    .slice(0, 3);
 
   return (
     <PageShell
       title={`${profile?.displayName ?? ""} 님, 오늘도 화이팅`}
       description={`오늘은 ${today} 입니다.`}
     >
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {/* ---------------- 목표 로드맵 ---------------- */}
-        <DashboardCard
-          title="목표 로드맵"
-          moreHref="/roadmap"
-          moreLabel={hasRoadmap ? "관리하기" : undefined}
-        >
-          {!hasRoadmap ? (
-            <EmptyCard
-              text="최종 목표를 정하고 달별 마일스톤으로 쪼개면 진행률이 여기에 보입니다."
-              href="/roadmap"
-              cta="목표 추가하러 가기"
+      {/* ---------------- 요약 카드 4개 ---------------- */}
+      <div className="grid grid-cols-2 gap-2 md:grid-cols-4 md:gap-3">
+        <StatCard
+          label="진행 중 지원"
+          value={inProgress.length}
+          unit="곳"
+          hint={`전체 ${applications.length}곳`}
+          href="/applications"
+        />
+        <StatCard
+          label="이번 주 마감"
+          value={dueThisWeek.length}
+          unit="건"
+          tone={dueThisWeek.length > 0 ? "danger" : "brand"}
+          hint={`${weekStart.slice(5)} ~ ${weekEnd.slice(5)}`}
+          href="/applications"
+        />
+        <StatCard
+          label="서류 합격률"
+          value={passRate === null ? "-" : passRate}
+          unit={passRate === null ? undefined : "%"}
+          tone="success"
+          hint={
+            submitted.length === 0
+              ? "제출한 지원 없음"
+              : `${passedDocs.length}/${submitted.length}곳`
+          }
+          href="/applications"
+        />
+        <StatCard
+          label="이번 주 할 일"
+          value={doneRate === null ? "-" : doneRate}
+          unit={doneRate === null ? undefined : "%"}
+          hint={
+            weekTasks.length === 0
+              ? "이번 주 할 일 없음"
+              : `${weekDone.length}/${weekTasks.length}개 완료`
+          }
+          href="/roadmap"
+        />
+      </div>
+
+      {/* ---------------- 오늘의 일정 + 미니 달력 ---------------- */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_20rem]">
+        <Card>
+          <CardHeader
+            title="오늘의 일정"
+            count={todayItems.length}
+            moreHref="/calendar"
+          />
+
+          {todayItems.length === 0 ? (
+            <EmptyState
+              text="오늘은 예정된 마감이나 일정이 없습니다."
+              href="/calendar"
+              cta="일정 추가하러 가기"
             />
           ) : (
-            <div className="flex flex-col gap-4">
-              {goals.map((goal) => {
-                const own = milestones.filter((m) => m.goal_id === goal.id);
-                const dday = goal.due_date ? dDayLabel(goal.due_date) : null;
-                return (
-                  <div key={goal.id}>
-                    <div className="flex items-baseline justify-between gap-2">
-                      <p className="min-w-0 truncate font-medium">
-                        {goal.title}
-                      </p>
-                      {dday ? (
-                        <span className="shrink-0 text-xs text-gray-500">
-                          {dday}
-                        </span>
-                      ) : null}
-                    </div>
-
-                    {own.length === 0 ? (
-                      <p className="mt-1 text-xs text-gray-400">
-                        달별 마일스톤이 아직 없습니다.
-                      </p>
-                    ) : (
-                      <ul className="mt-2 flex flex-col gap-2">
-                        {own.map((milestone) => {
-                          const current = currentValue(milestone, counts);
-                          const percent = percentOf(
-                            current,
-                            milestone.target_value,
-                          );
-                          return (
-                            <li key={milestone.id}>
-                              <div className="flex items-center justify-between gap-2 text-xs">
-                                <span className="min-w-0 truncate text-gray-700">
-                                  {milestone.month ? (
-                                    <span className="text-gray-400">
-                                      {milestone.month}{" "}
-                                    </span>
-                                  ) : null}
-                                  {milestone.title}
-                                </span>
-                                <span className="shrink-0 text-gray-500">
-                                  {current} / {milestone.target_value}
-                                </span>
-                              </div>
-                              <div className="mt-1">
-                                <MiniProgress percent={percent} />
-                              </div>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    )}
-                  </div>
-                );
-              })}
-
-              {milestones.some((m) => !m.goal_id) ? (
-                <p className="text-xs text-gray-400">
-                  목표에 묶이지 않은 마일스톤
-                  {milestones.filter((m) => !m.goal_id).length}개는{" "}
-                  <Link
-                    href="/roadmap"
-                    className="font-medium text-blue-600 hover:underline"
+            <ul className="flex flex-col gap-2">
+              {todayItems.map((item) => (
+                <li key={item.id} className="flex items-center gap-2">
+                  <span
+                    className={
+                      "shrink-0 rounded-full px-2 py-0.5 text-xs font-medium " +
+                      itemTone(item.type)
+                    }
                   >
-                    로드맵
-                  </Link>
-                  에서 볼 수 있습니다.
-                </p>
-              ) : null}
-            </div>
+                    {item.type}
+                  </span>
+                  <span className="min-w-0 flex-1 truncate text-sm">
+                    {item.label}
+                  </span>
+                  {item.time ? (
+                    <span className="shrink-0 text-xs text-ink-400">
+                      {item.time}
+                    </span>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
           )}
-        </DashboardCard>
 
-        {/* ---------------- 이번 주 → 오늘 할 일 ---------------- */}
-        <DashboardCard
-          title="할 일"
-          moreHref="/roadmap"
-          moreLabel={openTasks.length > 0 ? "전체 보기" : undefined}
-        >
-          {openTasks.length === 0 ? (
-            <EmptyCard
-              text="남은 할 일이 없습니다. 이번 주에 할 일을 적어 두면 여기에 모입니다."
-              href="/roadmap"
-              cta="할 일 추가하러 가기"
-            />
-          ) : (
-            <div className="flex flex-col gap-4">
-              <div>
-                <p className="mb-2 text-xs font-medium text-gray-500">
-                  오늘 {todayTasks.length > 0 ? `(${todayTasks.length})` : ""}
-                </p>
-                {todayTasks.length === 0 ? (
-                  <p className="text-xs text-gray-400">
-                    별(★)을 눌러 오늘 할 일로 올리세요.
-                  </p>
-                ) : (
-                  <ul className="flex flex-col gap-1">
-                    {todayTasks.map((task) => (
-                      <TaskLine key={task.id} task={task} />
-                    ))}
-                  </ul>
-                )}
-              </div>
+          {/* 오늘 할 일은 여기서 바로 체크할 수 있게 둔다 */}
+          <div className="mt-4 border-t border-line pt-3">
+            <p className="mb-2 text-xs font-medium text-ink-500">
+              오늘 할 일 {todayTasks.length > 0 ? `(${todayTasks.length})` : ""}
+            </p>
+            {todayTasks.length === 0 ? (
+              <p className="text-xs text-ink-400">
+                로드맵에서 별(★)을 눌러 오늘 할 일로 올리세요.
+              </p>
+            ) : (
+              <ul className="flex flex-col gap-0.5">
+                {todayTasks.map((task) => (
+                  <li key={task.id} className="flex items-center gap-1">
+                    <TaskCheckbox
+                      action={toggleTask}
+                      id={task.id}
+                      done={task.done}
+                      title={task.title}
+                    />
+                    <span className="min-w-0 flex-1 truncate text-sm">
+                      {task.title}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </Card>
 
-              <div>
-                <p className="mb-2 text-xs font-medium text-gray-500">
-                  이번 주 {weekTasks.length > 0 ? `(${weekTasks.length})` : ""}
-                </p>
-                {weekTasks.length === 0 ? (
-                  <p className="text-xs text-gray-400">
-                    이번 주에 남은 일이 없습니다.
-                  </p>
-                ) : (
-                  <ul className="flex flex-col gap-1">
-                    {weekTasks.map((task) => (
-                      <TaskLine key={task.id} task={task} />
-                    ))}
-                  </ul>
-                )}
-              </div>
-            </div>
-          )}
-        </DashboardCard>
+        <Card>
+          <MiniCalendar
+            month={month}
+            today={today}
+            markedDates={new Set(byDate.keys())}
+            urgentDates={urgentDates}
+          />
+        </Card>
+      </div>
 
-        {/* ---------------- 마감 임박 ---------------- */}
-        <DashboardCard
+      {/* ---------------- 마감 임박 ---------------- */}
+      <Card>
+        <CardHeader
           title="마감 임박"
           count={upcoming.length}
           moreHref="/applications"
-        >
-          {upcoming.length === 0 ? (
-            <EmptyCard
-              text={`${DEADLINE_WINDOW_DAYS}일 안에 마감인 지원이 없습니다.`}
-              href="/applications"
-              cta="지원 추가하러 가기"
-            />
-          ) : (
-            <ul className="flex flex-col gap-2">
-              {upcoming.map((item) => {
-                const urgent = item.days <= 3;
-                return (
-                  <li
-                    key={item.id}
-                    className="flex items-center justify-between gap-3"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium">
-                        {item.company}
-                        {item.role ? (
-                          <span className="font-normal text-gray-500">
-                            {" "}
-                            · {item.role}
-                          </span>
-                        ) : null}
-                      </p>
-                      <p className="truncate text-xs text-gray-400">
-                        {formatDeadline(item.deadline!)} · {item.status}
-                      </p>
-                    </div>
-                    <span
-                      className={
-                        "shrink-0 rounded px-2 py-0.5 text-xs font-bold " +
-                        (urgent
-                          ? "bg-red-100 text-red-700"
-                          : "bg-blue-100 text-blue-700")
-                      }
-                    >
-                      {item.days === 0 ? "D-DAY" : `D-${item.days}`}
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </DashboardCard>
+        />
 
-        {/* ---------------- 어학 유효기간 ---------------- */}
-        <DashboardCard
-          title="어학·자격 유효기간"
-          count={expiring.length}
-          moreHref="/profile"
-        >
-          {expiring.length === 0 ? (
-            <EmptyCard
-              text="곧 만료되는 어학 점수나 자격증이 없습니다. 유효기간을 넣어 두면 미리 알려 드립니다."
-              href="/profile"
-              cta="자격·어학 추가하러 가기"
-            />
-          ) : (
-            <ul className="flex flex-col gap-2">
-              {expiring.map((item) => {
-                const urgency = urgencyOf(item.expiry_date!);
-                const expired = urgency === "expired";
-                return (
-                  <li
-                    key={item.id}
-                    className="flex items-center justify-between gap-3"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium">
-                        {item.name}
-                        {item.score_or_grade ? (
-                          <span className="font-normal text-gray-500">
-                            {" "}
-                            · {item.score_or_grade}
-                          </span>
-                        ) : null}
-                      </p>
-                      <p className="truncate text-xs text-gray-400">
-                        {item.expiry_date} 만료
-                      </p>
-                    </div>
-                    <span
-                      className={
-                        "shrink-0 rounded px-2 py-0.5 text-xs font-bold " +
-                        (expired
-                          ? "bg-gray-100 text-gray-500"
-                          : "bg-red-100 text-red-700")
-                      }
-                    >
-                      {expired ? "만료됨" : dDayLabel(item.expiry_date!)}
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </DashboardCard>
-      </div>
+        {upcoming.length === 0 ? (
+          <EmptyState
+            text={`${DEADLINE_WINDOW_DAYS}일 안에 마감인 지원이 없습니다.`}
+            href="/applications"
+            cta="지원 추가하러 가기"
+          />
+        ) : (
+          <ul className="flex flex-col divide-y divide-line">
+            {upcoming.map((item) => {
+              const urgent = item.days <= URGENT_DAYS;
+              return (
+                <li key={item.id} className="flex items-center gap-3 py-2.5">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">
+                      {item.company}
+                      {item.role ? (
+                        <span className="font-normal text-ink-500">
+                          {" "}
+                          · {item.role}
+                        </span>
+                      ) : null}
+                    </p>
+                    <p className="truncate text-xs text-ink-400">
+                      {formatDeadline(item.deadline!)} · {item.status}
+                    </p>
+                  </div>
+                  <Tag tone={urgent ? "danger" : "brand"}>
+                    {item.days === 0 ? "D-DAY" : `D-${item.days}`}
+                  </Tag>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </Card>
+
+      {/* ---------------- 어학 유효기간 (있을 때만) ---------------- */}
+      {expiring.length > 0 ? (
+        <Card>
+          <CardHeader
+            title="어학·자격 유효기간"
+            count={expiring.length}
+            moreHref="/profile"
+          />
+          <ul className="flex flex-col divide-y divide-line">
+            {expiring.map((item) => {
+              const expired = item.days < 0;
+              return (
+                <li key={item.id} className="flex items-center gap-3 py-2.5">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">
+                      {item.name}
+                      {item.score_or_grade ? (
+                        <span className="font-normal text-ink-500">
+                          {" "}
+                          · {item.score_or_grade}
+                        </span>
+                      ) : null}
+                    </p>
+                    <p className="truncate text-xs text-ink-400">
+                      {item.expiry_date} 만료
+                    </p>
+                  </div>
+                  <Tag tone={expired ? "muted" : "danger"}>
+                    {expired ? "만료됨" : `D-${item.days}`}
+                  </Tag>
+                </li>
+              );
+            })}
+          </ul>
+        </Card>
+      ) : null}
+
+      <p className="text-center text-xs text-ink-400">
+        <Link href="/roadmap" className="hover:underline">
+          목표 로드맵에서 이번 달 마일스톤 보기
+        </Link>
+      </p>
     </PageShell>
   );
 }

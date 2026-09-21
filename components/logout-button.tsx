@@ -2,7 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { LogOut } from "lucide-react";
 
+import { btnGhost } from "@/components/ui/primitives";
 import { createClient } from "@/lib/supabase/client";
 
 export function LogoutButton() {
@@ -22,8 +24,9 @@ export function LogoutButton() {
       type="button"
       onClick={handleClick}
       disabled={pending}
-      className="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium hover:bg-gray-50 disabled:opacity-50"
+      className={btnGhost + " w-full"}
     >
+      <LogOut className="size-4" aria-hidden />
       {pending ? "로그아웃 중..." : "로그아웃"}
     </button>
   );

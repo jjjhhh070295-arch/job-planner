@@ -19,6 +19,15 @@ const QUICK_ITEMS = [
   { label: "공부 기록", icon: BookOpenCheck, href: null },
 ] as const;
 
+/**
+ * 모바일에서는 하단 탭(56px) + 홈바 위로 띄우고, 데스크톱에서는 화면 오른쪽 아래에 둔다.
+ * 탭에 가리면 누를 수 없으므로 위치 계산에 안전 영역을 포함한다.
+ */
+const FAB_BOTTOM =
+  "bottom-[calc(4rem+env(safe-area-inset-bottom,0px))] md:bottom-6";
+const MENU_BOTTOM =
+  "bottom-[calc(8.5rem+env(safe-area-inset-bottom,0px))] md:bottom-24";
+
 export function QuickAdd() {
   const [open, setOpen] = useState(false);
 
@@ -29,13 +38,18 @@ export function QuickAdd() {
           type="button"
           aria-label="닫기"
           onClick={() => setOpen(false)}
-          className="fixed inset-0 z-30 bg-black/30"
+          className="fixed inset-0 z-30 bg-ink-900/30"
         />
       ) : null}
 
       {open ? (
-        <div className="fixed right-4 bottom-32 z-40 w-56 rounded-lg border border-gray-200 bg-white p-2 shadow-lg md:bottom-20">
-          <p className="px-3 py-2 text-xs font-medium text-gray-500">
+        <div
+          className={
+            "fixed right-4 z-40 w-56 rounded-xl border border-line bg-surface p-2 shadow-xl " +
+            MENU_BOTTOM
+          }
+        >
+          <p className="px-3 py-2 text-xs font-medium text-ink-500">
             빠른 추가
           </p>
           {QUICK_ITEMS.map((item) => {
@@ -45,12 +59,12 @@ export function QuickAdd() {
                 key={item.label}
                 type="button"
                 disabled={item.href === null}
-                className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm hover:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:bg-transparent"
+                className="flex h-11 w-full items-center gap-3 rounded-lg px-3 text-left text-sm hover:bg-muted-100 disabled:cursor-not-allowed disabled:text-ink-400 disabled:hover:bg-transparent"
               >
                 <Icon className="size-4 shrink-0" aria-hidden />
                 <span className="flex-1">{item.label}</span>
                 {item.href === null ? (
-                  <span className="text-[11px] text-gray-400">준비 중</span>
+                  <span className="text-[11px] text-ink-400">준비 중</span>
                 ) : null}
               </button>
             );
@@ -62,7 +76,11 @@ export function QuickAdd() {
         type="button"
         onClick={() => setOpen((value) => !value)}
         aria-label={open ? "빠른 추가 닫기" : "빠른 추가"}
-        className="fixed right-4 bottom-20 z-40 flex size-14 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 md:bottom-6"
+        aria-expanded={open}
+        className={
+          "fixed right-4 z-40 flex size-14 items-center justify-center rounded-full bg-brand-600 text-white shadow-lg hover:bg-brand-700 " +
+          FAB_BOTTOM
+        }
       >
         {open ? (
           <X className="size-6" aria-hidden />

@@ -33,8 +33,12 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         isAdmin={isAdmin}
       />
 
-      {/* 모바일에서는 하단 탭에 가리지 않도록 아래쪽 여백을 준다 */}
-      <div className="flex min-w-0 flex-1 flex-col pb-20 md:pb-0">
+      {/*
+        min-w-0 이 없으면 표처럼 넓은 자식이 이 칸을 밀어내 화면 전체에
+        가로 스크롤이 생긴다. 모바일에서 특히 잘 드러난다.
+        아래 여백은 하단 탭(56px) + 홈바 안전 영역.
+      */}
+      <div className="flex min-w-0 flex-1 flex-col pb-[calc(3.5rem+env(safe-area-inset-bottom,0px))] md:pb-0">
         {children}
       </div>
 
