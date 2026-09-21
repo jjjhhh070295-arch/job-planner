@@ -40,6 +40,35 @@ export async function loadProgressCounts(
     supabase.from("tasks").select("milestone_id").eq("done", true),
   ]);
 
+  // 끝난 공부만 센다. 돌고 있는 타이머는 아직 시간이 확정되지 않았다.
+  const studyResult = await supabase
+    .from("study_sessions")
+    .select("milestone_id, started_at, ended_at")
+    .not("milestone_id", "is", null)
+    .not("ended_at", "is", null);
+
+  const studyMinutes = new Map<string, number>();
+  for (const row of studyResult.data ?? []) {
+    const r = row as {
+      milestone_id: string | null;
+      started_at: string;
+      ended_at: string;
+    };
+    if (!r.milestone_id) continue;
+    const minutes =
+      (new Date(r.ended_at).getTime() - new Date(r.started_at).getTime()) /
+      60_000;
+    studyMinutes.set(
+      r.milestone_id,
+      (studyMinutes.get(r.milestone_id) ?? 0) + minutes,
+    );
+  }
+
+  const studyHoursByMilestone = new Map<string, number>();
+  for (const [key, minutes] of studyMinutes) {
+    studyHoursByMilestone.set(key, Math.floor(minutes / 60));
+  }
+
   const doneTasksByMilestone = new Map<string, number>();
   for (const row of doneTasks.data ?? []) {
     const key = (row as { milestone_id: string | null }).milestone_id;
@@ -52,6 +81,7 @@ export async function loadProgressCounts(
     experiences: experiences.count ?? 0,
     specs: specs.count ?? 0,
     doneTasksByMilestone,
+    studyHoursByMilestone,
   };
 }
 

@@ -8,6 +8,7 @@ export const AUTO_SOURCES = [
   { value: "tasks", label: "완료한 할 일 수" },
   { value: "experiences", label: "등록한 경험 수" },
   { value: "specs", label: "보유한 자격·어학 수" },
+  { value: "study", label: "공부 시간 (시간)" },
 ] as const;
 
 export type AutoSource = (typeof AUTO_SOURCES)[number]["value"];
@@ -20,6 +21,8 @@ export type ProgressCounts = {
   specs: number;
   /** 마일스톤별 완료한 할 일 수 */
   doneTasksByMilestone: Map<string, number>;
+  /** 마일스톤별 공부 시간(시간 단위, 내림) */
+  studyHoursByMilestone: Map<string, number>;
 };
 
 export type Milestone = {
@@ -45,6 +48,8 @@ export function currentValue(
       return counts.experiences;
     case "specs":
       return counts.specs;
+    case "study":
+      return counts.studyHoursByMilestone.get(milestone.id) ?? 0;
     default:
       return milestone.manual_value;
   }

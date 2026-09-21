@@ -13,12 +13,19 @@ import {
 
 // CLAUDE.md 4장의 빠른 추가 4종.
 // 해당 기능이 아직 없는 항목은 눌러도 동작하지 않게 두고, 기능이 붙을 때 href 를 채운다.
-const QUICK_ITEMS = [
+type QuickItem = {
+  label: string;
+  icon: typeof ClipboardPaste;
+  /** 아직 기능이 없으면 null 로 두고 "준비 중" 으로 보여 준다 */
+  href: string | null;
+};
+
+const QUICK_ITEMS: QuickItem[] = [
   { label: "공고 붙여넣기", icon: ClipboardPaste, href: "/applications/parse" },
-  { label: "할 일", icon: CheckSquare, href: null },
+  { label: "할 일", icon: CheckSquare, href: "/roadmap" },
   { label: "면접 기록", icon: MessagesSquare, href: "/interviews" },
-  { label: "공부 기록", icon: BookOpenCheck, href: null },
-] as const;
+  { label: "공부 기록", icon: BookOpenCheck, href: "/study" },
+];
 
 /**
  * 모바일에서는 하단 탭(56px) + 홈바 위로 띄우고, 데스크톱에서는 화면 오른쪽 아래에 둔다.

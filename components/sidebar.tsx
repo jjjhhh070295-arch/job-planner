@@ -8,6 +8,7 @@ import {
   MessagesSquare,
   Route,
   Settings,
+  BookOpenCheck,
   CalendarCheck,
   ShieldUser,
   Ticket,
@@ -66,6 +67,10 @@ export function Sidebar({ displayName, username, isAdmin }: Props) {
         <Link href="/interviews" className={subLink}>
           <MessagesSquare className="size-4 shrink-0" aria-hidden />
           면접 복기
+        </Link>
+        <Link href="/study" className={subLink}>
+          <BookOpenCheck className="size-4 shrink-0" aria-hidden />
+          공부 기록
         </Link>
         {isAdmin ? (
           <>
