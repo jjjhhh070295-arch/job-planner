@@ -1,9 +1,12 @@
+import Link from "next/link";
+
 import { addEssay, removeEssay, toggleEssayFinal, updateEssay } from "./actions";
 import { DeleteRowButton } from "@/components/delete-row-button";
 import { EditableRow } from "@/components/editable-row";
 import { EssayFinalToggle } from "@/components/essay-final-toggle";
 import { PageShell } from "@/components/page-shell";
 import { RecordForm, type Field } from "@/components/record-form";
+import { Tag, btnPrimary, inputClass } from "@/components/ui/primitives";
 import { ESSAY_CATEGORIES } from "@/lib/essay-category";
 import { createClient } from "@/lib/supabase/server";
 
@@ -15,6 +18,15 @@ type Essay = {
   category: string | null;
   answer: string | null;
   is_final: boolean;
+};
+
+type InterviewQuestion = {
+  id: string;
+  interview_id: string;
+  question: string;
+  my_answer: string | null;
+  improvement: string | null;
+  category: string | null;
 };
 
 type ApplicationOption = {
@@ -32,15 +44,27 @@ function safeKeyword(raw: string): string {
   return raw.replace(/[,()*\\]/g, " ").trim().slice(0, 50);
 }
 
+const KINDS = [
+  { value: "", label: "전체" },
+  { value: "essay", label: "자소서만" },
+  { value: "interview", label: "면접 질문만" },
+];
+
 export default async function LibraryPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; category?: string; app?: string }>;
+  searchParams: Promise<{
+    q?: string;
+    category?: string;
+    app?: string;
+    kind?: string;
+  }>;
 }) {
   const params = await searchParams;
   const keyword = safeKeyword(params.q ?? "");
   const category = params.category ?? "";
   const applicationId = params.app ?? "";
+  const kind = params.kind ?? "";
 
   const supabase = await createClient();
 
@@ -57,24 +81,63 @@ export default async function LibraryPage({
     ]),
   );
 
-  let query = supabase
+  /* ---------------- 자소서 ---------------- */
+  let essayQuery = supabase
     .from("essays")
     .select("*")
     .order("created_at", { ascending: false });
 
   if (keyword) {
     // 한국어는 부분 일치가 잘 맞아서 ilike 를 쓴다. trigram 인덱스가 받쳐 준다.
-    query = query.or(`question.ilike.%${keyword}%,answer.ilike.%${keyword}%`);
+    essayQuery = essayQuery.or(
+      `question.ilike.%${keyword}%,answer.ilike.%${keyword}%`,
+    );
   }
-  if (category) {
-    query = query.eq("category", category);
-  }
-  if (applicationId) {
-    query = query.eq("application_id", applicationId);
+  if (category) essayQuery = essayQuery.eq("category", category);
+  if (applicationId) essayQuery = essayQuery.eq("application_id", applicationId);
+
+  /* ---------------- 면접 질문 ---------------- */
+  let interviewQuery = supabase
+    .from("interview_questions")
+    .select("id, interview_id, question, my_answer, improvement, category")
+    .order("created_at", { ascending: false });
+
+  if (keyword) {
+    interviewQuery = interviewQuery.or(
+      `question.ilike.%${keyword}%,my_answer.ilike.%${keyword}%,improvement.ilike.%${keyword}%`,
+    );
   }
 
-  const { data: essayData } = await query;
-  const essays = (essayData ?? []) as Essay[];
+  const [essayResult, interviewResult, interviewMetaResult] = await Promise.all([
+    kind === "interview" ? Promise.resolve({ data: [] }) : essayQuery,
+    kind === "essay" ? Promise.resolve({ data: [] }) : interviewQuery,
+    supabase.from("interviews").select("id, stage, application_id"),
+  ]);
+
+  const essays = (essayResult.data ?? []) as Essay[];
+  let interviewQuestions = (interviewResult.data ?? []) as InterviewQuestion[];
+
+  const interviewMeta = new Map(
+    (interviewMetaResult.data ?? []).map((row) => {
+      const r = row as {
+        id: string;
+        stage: string;
+        application_id: string | null;
+      };
+      return [r.id, r];
+    }),
+  );
+
+  // 기업 필터는 면접 질문에도 적용한다.
+  // 질문 자체에는 기업이 없고 회차에 붙어 있어서 여기서 걸러낸다.
+  if (applicationId) {
+    interviewQuestions = interviewQuestions.filter(
+      (q) => interviewMeta.get(q.interview_id)?.application_id === applicationId,
+    );
+  }
+
+  const total = essays.length + interviewQuestions.length;
+  const filtering = Boolean(keyword || category || applicationId || kind);
 
   const fields: Field[] = [
     {
@@ -111,12 +174,7 @@ export default async function LibraryPage({
       type: "number",
       placeholder: "1000",
     },
-    {
-      name: "state",
-      label: "상태",
-      type: "select",
-      options: ["초안", "최종"],
-    },
+    { name: "state", label: "상태", type: "select", options: ["초안", "최종"] },
     {
       name: "answer",
       label: "답변",
@@ -125,41 +183,53 @@ export default async function LibraryPage({
     },
   ];
 
-  const inputClass =
-    "rounded-md border border-line px-3 py-2 text-sm outline-none focus:border-brand-500";
-
   return (
     <PageShell
       title="라이브러리"
-      description="써 둔 자소서를 검색하고 재활용합니다."
+      description="써 둔 자소서와 받았던 면접 질문을 한곳에서 찾습니다."
     >
       {/* ---------------- 검색 ---------------- */}
-      <form method="get" className="flex flex-col gap-3">
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <input
-            type="search"
-            name="q"
-            defaultValue={params.q ?? ""}
-            placeholder="문항이나 답변에서 검색"
-            className={`flex-1 ${inputClass}`}
-          />
+      <form method="get" className="flex flex-col gap-2">
+        <input
+          type="search"
+          name="q"
+          defaultValue={params.q ?? ""}
+          placeholder="문항·답변·면접 질문에서 검색"
+          className={inputClass + " h-11"}
+        />
+
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+          <select
+            name="kind"
+            defaultValue={kind}
+            className={inputClass + " h-11"}
+            aria-label="종류"
+          >
+            {KINDS.map((item) => (
+              <option key={item.value} value={item.value}>
+                {item.label}
+              </option>
+            ))}
+          </select>
+
           <select
             name="category"
             defaultValue={category}
-            className={inputClass}
-            aria-label="문항 유형"
+            className={inputClass + " h-11"}
+            aria-label="자소서 문항 유형"
           >
-            <option value="">유형 전체</option>
+            <option value="">자소서 유형 전체</option>
             {ESSAY_CATEGORIES.map((item) => (
               <option key={item} value={item}>
                 {item}
               </option>
             ))}
           </select>
+
           <select
             name="app"
             defaultValue={applicationId}
-            className={inputClass}
+            className={inputClass + " h-11"}
             aria-label="기업"
           >
             <option value="">기업 전체</option>
@@ -169,114 +239,195 @@ export default async function LibraryPage({
               </option>
             ))}
           </select>
-          <button
-            type="submit"
-            className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
-          >
+        </div>
+
+        <div className="flex gap-2">
+          <button type="submit" className={btnPrimary + " flex-1 sm:flex-none"}>
             검색
           </button>
+          {filtering ? (
+            <Link
+              href="/library"
+              className="tap inline-flex items-center justify-center rounded-lg border border-line bg-surface px-4 text-sm font-medium text-ink-700 hover:bg-muted-100"
+            >
+              초기화
+            </Link>
+          ) : null}
         </div>
       </form>
 
-      <p className="-mt-2 text-sm text-ink-500">
-        {keyword || category || applicationId
-          ? `검색 결과 ${essays.length}건`
-          : `전체 ${essays.length}건`}
+      <p className="-mt-1 text-sm text-ink-500">
+        {filtering ? "검색 결과" : "전체"} {total}건
+        {total > 0
+          ? ` (자소서 ${essays.length} · 면접 질문 ${interviewQuestions.length})`
+          : ""}
       </p>
 
-      {/* ---------------- 목록 ---------------- */}
-      {essays.length === 0 ? (
+      {total === 0 ? (
         <p className="rounded-xl border border-dashed border-line bg-surface px-4 py-10 text-center text-sm text-ink-500">
-          {keyword || category || applicationId
-            ? "조건에 맞는 자소서가 없습니다."
-            : "아직 저장한 자소서가 없습니다. 아래에서 추가해 보세요."}
+          {filtering
+            ? "조건에 맞는 것이 없습니다."
+            : "아직 저장한 자소서나 면접 질문이 없습니다."}
         </p>
-      ) : (
-        <ul className="flex flex-col gap-3">
-          {essays.map((essay) => {
-            const length = essay.answer?.length ?? 0;
-            const over = essay.char_limit ? length > essay.char_limit : false;
+      ) : null}
 
-            return (
-              <li key={essay.id}>
-                <EditableRow
-                  action={updateEssay}
-                  fields={fields}
-                  defaults={{
-                    application_id: essay.application_id,
-                    question: essay.question,
-                    char_limit:
-                      essay.char_limit === null ? "" : String(essay.char_limit),
-                    category: essay.category,
-                    answer: essay.answer,
-                    state: essay.is_final ? "최종" : "초안",
-                  }}
-                  id={essay.id}
-                  title={essay.question.slice(0, 20)}
-                  deleteSlot={
-                    <DeleteRowButton
-                      action={removeEssay}
-                      id={essay.id}
-                      label={essay.question.slice(0, 20)}
-                    />
-                  }
-                >
-                  <div className="min-w-0">
-                    <p className="font-medium wrap-anywhere whitespace-pre-wrap">
-                      {essay.question}
-                    </p>
-                    <p className="mt-1 flex flex-wrap items-center gap-x-2 text-xs text-ink-500">
-                      {essay.application_id ? (
-                        <span>
-                          {companyById.get(essay.application_id) ??
-                            "삭제된 기업"}
-                        </span>
-                      ) : null}
-                      {essay.category ? (
-                        <>
-                          {essay.application_id ? (
-                            <span aria-hidden>·</span>
-                          ) : null}
-                          <span>{essay.category}</span>
-                        </>
-                      ) : null}
-                      <span aria-hidden>·</span>
-                      <span className={over ? "font-medium text-danger-600" : ""}>
-                        {length}자
-                        {essay.char_limit ? ` / ${essay.char_limit}자` : ""}
-                        {over ? " 초과" : ""}
-                      </span>
-                    </p>
+      {/* ---------------- 자소서 ---------------- */}
+      {essays.length > 0 ? (
+        <section className="flex flex-col gap-2">
+          <h2 className="text-base font-bold">
+            자소서{" "}
+            <span className="text-sm font-normal text-ink-400">
+              {essays.length}
+            </span>
+          </h2>
 
-                    <div className="mt-2">
-                      <EssayFinalToggle
-                      action={toggleEssayFinal}
+          <ul className="flex flex-col gap-2">
+            {essays.map((essay) => {
+              const length = essay.answer?.length ?? 0;
+              const over = essay.char_limit ? length > essay.char_limit : false;
+
+              return (
+                <li key={essay.id}>
+                  <EditableRow
+                    action={updateEssay}
+                    fields={fields}
+                    defaults={{
+                      application_id: essay.application_id,
+                      question: essay.question,
+                      char_limit:
+                        essay.char_limit === null
+                          ? ""
+                          : String(essay.char_limit),
+                      category: essay.category,
+                      answer: essay.answer,
+                      state: essay.is_final ? "최종" : "초안",
+                    }}
+                    id={essay.id}
+                    title={essay.question.slice(0, 20)}
+                    deleteSlot={
+                      <DeleteRowButton
+                        action={removeEssay}
                         id={essay.id}
-                        isFinal={essay.is_final}
+                        label={essay.question.slice(0, 20)}
                       />
-                    </div>
-
-                    {essay.answer ? (
-                    <details className="mt-3">
-                      <summary className="cursor-pointer text-sm font-medium text-brand-600">
-                        답변 보기
-                      </summary>
-                      <p className="mt-2 wrap-anywhere whitespace-pre-wrap text-sm text-ink-700">
-                        {essay.answer}
+                    }
+                  >
+                    <div className="min-w-0">
+                      <p className="wrap-anywhere whitespace-pre-wrap font-medium">
+                        {essay.question}
                       </p>
-                    </details>
-                  ) : (
-                    <p className="mt-3 text-sm text-ink-400">
-                      아직 답변을 쓰지 않았습니다.
-                    </p>
-                  )}
+                      <p className="mt-1 flex flex-wrap items-center gap-x-2 text-xs text-ink-500">
+                        {essay.application_id ? (
+                          <span>
+                            {companyById.get(essay.application_id) ??
+                              "삭제된 기업"}
+                          </span>
+                        ) : null}
+                        {essay.category ? (
+                          <>
+                            <span aria-hidden>·</span>
+                            <span>{essay.category}</span>
+                          </>
+                        ) : null}
+                        <span aria-hidden>·</span>
+                        <span
+                          className={over ? "font-medium text-danger-600" : ""}
+                        >
+                          {length}자
+                          {essay.char_limit ? ` / ${essay.char_limit}자` : ""}
+                          {over ? " 초과" : ""}
+                        </span>
+                      </p>
+
+                      <div className="mt-2">
+                        <EssayFinalToggle
+                          action={toggleEssayFinal}
+                          id={essay.id}
+                          isFinal={essay.is_final}
+                        />
+                      </div>
+
+                      {essay.answer ? (
+                        <details className="mt-3">
+                          <summary className="cursor-pointer py-1 text-sm font-medium text-brand-600">
+                            답변 보기
+                          </summary>
+                          <p className="mt-2 wrap-anywhere whitespace-pre-wrap text-sm text-ink-700">
+                            {essay.answer}
+                          </p>
+                        </details>
+                      ) : (
+                        <p className="mt-3 text-sm text-ink-400">
+                          아직 답변을 쓰지 않았습니다.
+                        </p>
+                      )}
+                    </div>
+                  </EditableRow>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ) : null}
+
+      {/* ---------------- 면접 질문 ---------------- */}
+      {interviewQuestions.length > 0 ? (
+        <section className="flex flex-col gap-2">
+          <h2 className="text-base font-bold">
+            면접 질문{" "}
+            <span className="text-sm font-normal text-ink-400">
+              {interviewQuestions.length}
+            </span>
+          </h2>
+
+          <ul className="flex flex-col gap-2">
+            {interviewQuestions.map((item) => {
+              const meta = interviewMeta.get(item.interview_id);
+              const company = meta?.application_id
+                ? (companyById.get(meta.application_id) ?? "삭제된 기업")
+                : "기업 미지정";
+
+              return (
+                <li
+                  key={item.id}
+                  className="rounded-xl border border-line bg-surface p-4"
+                >
+                  <div className="mb-1 flex flex-wrap items-center gap-1.5">
+                    <span className="text-xs text-ink-500">
+                      {company}
+                      {meta?.stage ? ` · ${meta.stage}` : ""}
+                    </span>
+                    {item.category ? <Tag>{item.category}</Tag> : null}
                   </div>
-                </EditableRow>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+
+                  <p className="wrap-anywhere whitespace-pre-wrap font-medium">
+                    {item.question}
+                  </p>
+
+                  {item.my_answer ? (
+                    <p className="mt-2 wrap-anywhere whitespace-pre-wrap text-sm text-ink-700">
+                      {item.my_answer}
+                    </p>
+                  ) : null}
+
+                  {item.improvement ? (
+                    <p className="mt-2 rounded-lg bg-brand-50 px-3 py-2 wrap-anywhere whitespace-pre-wrap text-sm text-brand-700">
+                      보완점 · {item.improvement}
+                    </p>
+                  ) : null}
+
+                  <Link
+                    href={`/interviews/${item.interview_id}`}
+                    className="mt-2 inline-block py-1 text-xs font-medium text-brand-600 hover:underline"
+                  >
+                    이 회차로 가기
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ) : null}
 
       <RecordForm action={addEssay} fields={fields} openLabel="자소서 추가" />
     </PageShell>

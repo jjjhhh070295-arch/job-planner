@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   KeyRound,
   MessageSquare,
+  MessagesSquare,
   Route,
   Settings,
   ShieldUser,
@@ -60,6 +61,10 @@ export function Sidebar({ displayName, username, isAdmin }: Props) {
         <Link href="/roadmap" className={subLink}>
           <Route className="size-4 shrink-0" aria-hidden />
           목표 로드맵
+        </Link>
+        <Link href="/interviews" className={subLink}>
+          <MessagesSquare className="size-4 shrink-0" aria-hidden />
+          면접 복기
         </Link>
         {isAdmin ? (
           <>

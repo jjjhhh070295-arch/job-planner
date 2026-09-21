@@ -16,7 +16,7 @@ import {
 const QUICK_ITEMS = [
   { label: "공고 붙여넣기", icon: ClipboardPaste, href: "/applications/parse" },
   { label: "할 일", icon: CheckSquare, href: null },
-  { label: "면접 기록", icon: MessagesSquare, href: null },
+  { label: "면접 기록", icon: MessagesSquare, href: "/interviews" },
   { label: "공부 기록", icon: BookOpenCheck, href: null },
 ] as const;
 
