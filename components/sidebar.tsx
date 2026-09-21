@@ -10,6 +10,7 @@ import {
   Settings,
   Building2,
   BookOpenCheck,
+  Share2,
   CalendarCheck,
   ShieldUser,
   Ticket,
@@ -72,6 +73,10 @@ export function Sidebar({ displayName, username, isAdmin }: Props) {
         <Link href="/study" className={subLink}>
           <BookOpenCheck className="size-4 shrink-0" aria-hidden />
           공부 기록
+        </Link>
+        <Link href="/sharing" className={subLink}>
+          <Share2 className="size-4 shrink-0" aria-hidden />
+          공유
         </Link>
         {isAdmin ? (
           <>

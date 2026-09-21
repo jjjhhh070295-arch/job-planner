@@ -24,7 +24,7 @@ import {
 import { formatYearMonth, mondayOf, todayInSeoul } from "@/lib/date";
 import { loadProgressCounts, type Goal, type MilestoneRow, type Task } from "@/lib/queries";
 import { AUTO_SOURCES, currentValue, percentOf, sourceLabel } from "@/lib/roadmap";
-import { createClient } from "@/lib/supabase/server";
+import { createOwnClient } from "@/lib/supabase/server";
 
 function ProgressBar({ percent }: { percent: number }) {
   const done = percent >= 100;
@@ -124,7 +124,7 @@ function TaskRow({
 }
 
 export default async function RoadmapPage() {
-  const supabase = await createClient();
+  const { supabase, userId } = await createOwnClient();
 
   const [goalResult, milestoneResult, taskResult, counts] = await Promise.all([
     supabase.from("goals").select("*").order("due_date", { nullsFirst: false }),
@@ -134,7 +134,7 @@ export default async function RoadmapPage() {
       .select("*")
       .order("done")
       .order("due_date", { nullsFirst: false }),
-    loadProgressCounts(supabase),
+    loadProgressCounts(supabase, userId),
   ]);
 
   const goals = (goalResult.data ?? []) as Goal[];

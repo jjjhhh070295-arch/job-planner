@@ -11,7 +11,7 @@ import {
   INTERVIEW_RESULTS,
   resultTone,
 } from "@/lib/interview";
-import { createClient } from "@/lib/supabase/server";
+import { createOwnClient } from "@/lib/supabase/server";
 
 type InterviewRow = {
   id: string;
@@ -27,18 +27,23 @@ type InterviewRow = {
 };
 
 export default async function InterviewsPage() {
-  const supabase = await createClient();
+  const { supabase, userId } = await createOwnClient();
 
   const [interviewResult, appResult, questionResult] = await Promise.all([
     supabase
       .from("interviews")
       .select("*")
+      .eq("user_id", userId)
       .order("date", { ascending: false, nullsFirst: false }),
     supabase
       .from("applications")
       .select("id, company, season")
+      .eq("user_id", userId)
       .order("created_at", { ascending: false }),
-    supabase.from("interview_questions").select("interview_id"),
+    supabase
+      .from("interview_questions")
+      .select("interview_id")
+      .eq("user_id", userId),
   ]);
 
   const interviews = (interviewResult.data ?? []) as InterviewRow[];

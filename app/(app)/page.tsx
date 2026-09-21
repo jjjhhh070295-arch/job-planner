@@ -24,7 +24,7 @@ import {
 } from "@/lib/date";
 import { getCurrentProfile } from "@/lib/auth/current-user";
 import type { Task } from "@/lib/queries";
-import { createClient } from "@/lib/supabase/server";
+import { createOwnClient } from "@/lib/supabase/server";
 
 type AppRow = {
   id: string;
@@ -62,7 +62,7 @@ function addDays(date: string, days: number): string {
 
 export default async function HomePage() {
   const profile = await getCurrentProfile();
-  const supabase = await createClient();
+  const { supabase, userId } = await createOwnClient();
 
   const today = todayInSeoul();
   const weekStart = mondayOf(today);
@@ -70,7 +70,10 @@ export default async function HomePage() {
   const month = currentMonth();
 
   const [appResult, taskResult, specResult, eventResult] = await Promise.all([
-    supabase.from("applications").select("id, company, role, status, deadline"),
+    supabase
+      .from("applications")
+      .select("id, company, role, status, deadline")
+      .eq("user_id", userId),
     supabase.from("tasks").select("*"),
     supabase
       .from("user_specs")

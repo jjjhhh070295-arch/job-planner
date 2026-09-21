@@ -19,7 +19,7 @@ import {
   type CalendarItem,
 } from "@/lib/calendar";
 import { toDateInput, toTimeInput, todayInSeoul } from "@/lib/date";
-import { createClient } from "@/lib/supabase/server";
+import { createOwnClient } from "@/lib/supabase/server";
 
 type EventRow = {
   id: string;
@@ -82,12 +82,13 @@ export default async function CalendarPage({
   const lastDate = [...grid].reverse().find((d) => d.inMonth)!.date;
   const today = todayInSeoul();
 
-  const supabase = await createClient();
+  const { supabase, userId } = await createOwnClient();
 
   const [appResult, taskResult, eventResult, specResult] = await Promise.all([
     supabase
       .from("applications")
       .select("id, company, role, status, deadline")
+      .eq("user_id", userId)
       .not("deadline", "is", null)
       .gte("deadline", fromIso)
       .lt("deadline", toIso),

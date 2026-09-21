@@ -4,7 +4,7 @@ import { PageShell } from "@/components/page-shell";
 import { RecordForm, type Field } from "@/components/record-form";
 import { STATUSES } from "@/lib/application-status";
 import { daysUntilTimestamp, formatDeadline, toDateInput } from "@/lib/date";
-import { createClient } from "@/lib/supabase/server";
+import { createOwnClient } from "@/lib/supabase/server";
 
 const FIELDS: Field[] = [
   { name: "company", label: "기업", required: true, placeholder: "○○전자" },
@@ -22,10 +22,11 @@ const FIELDS: Field[] = [
 ];
 
 export default async function ApplicationsPage() {
-  const supabase = await createClient();
+  const { supabase, userId } = await createOwnClient();
   const { data } = await supabase
     .from("applications")
     .select("*")
+    .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
   // 날짜 계산은 서버에서 서울 기준으로 끝내고 문자열로 넘긴다.

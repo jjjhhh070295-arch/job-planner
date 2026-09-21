@@ -25,12 +25,15 @@ export type Task = {
 export async function loadProgressCounts(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   supabase: SupabaseClient<any, any, any>,
+  /** 공유받은 지원 건이 섞이지 않게 내 것만 센다 */
+  userId: string,
 ): Promise<ProgressCounts> {
   const [applications, experiences, specs, doneTasks] = await Promise.all([
     // "작성 중" 은 아직 제출한 게 아니므로 뺀다.
     supabase
       .from("applications")
       .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
       .neq("status", "작성 중"),
     supabase.from("experiences").select("id", { count: "exact", head: true }),
     supabase

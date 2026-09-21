@@ -19,7 +19,7 @@ import { RecordForm, type Field } from "@/components/record-form";
 import { Tag, btnPrimary, inputClass } from "@/components/ui/primitives";
 import { formatPeriod } from "@/lib/date";
 import { ESSAY_CATEGORIES } from "@/lib/essay-category";
-import { createClient } from "@/lib/supabase/server";
+import { createOwnClient } from "@/lib/supabase/server";
 
 type Essay = {
   id: string;
@@ -79,11 +79,12 @@ export default async function LibraryPage({
   const applicationId = params.app ?? "";
   const kind = params.kind ?? "";
 
-  const supabase = await createClient();
+  const { supabase, userId } = await createOwnClient();
 
   const { data: applicationData } = await supabase
     .from("applications")
     .select("id, company, role, season")
+    .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
   const applications = (applicationData ?? []) as ApplicationOption[];
@@ -98,6 +99,7 @@ export default async function LibraryPage({
   let essayQuery = supabase
     .from("essays")
     .select("*")
+    .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
   if (keyword) {
@@ -113,6 +115,7 @@ export default async function LibraryPage({
   let interviewQuery = supabase
     .from("interview_questions")
     .select("id, interview_id, question, my_answer, improvement, category")
+    .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
   if (keyword) {
@@ -124,7 +127,10 @@ export default async function LibraryPage({
   const [essayResult, interviewResult, interviewMetaResult] = await Promise.all([
     kind === "interview" ? Promise.resolve({ data: [] }) : essayQuery,
     kind === "essay" ? Promise.resolve({ data: [] }) : interviewQuery,
-    supabase.from("interviews").select("id, stage, application_id"),
+    supabase
+      .from("interviews")
+      .select("id, stage, application_id")
+      .eq("user_id", userId),
   ]);
 
   // 프롬프트에 넣을 재료. 경험과 최종본 자소서는 AI 로 보내지 않고 화면에서 조립만 한다.
@@ -132,10 +138,12 @@ export default async function LibraryPage({
     supabase
       .from("experiences")
       .select("*")
+      .eq("user_id", userId)
       .order("period_start", { ascending: false }),
     supabase
       .from("essays")
       .select("id, question, answer")
+      .eq("user_id", userId)
       .eq("is_final", true)
       .not("answer", "is", null)
       .limit(20),

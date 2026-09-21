@@ -36,3 +36,18 @@ export async function createClient() {
     },
   );
 }
+
+/**
+ * 로그인한 사람의 클라이언트와 id 를 함께 돌려준다.
+ *
+ * 공유 기능이 생기면서 essays·interviews·applications 의 읽기 정책이
+ * "내 것 또는 공유받은 것" 으로 넓어졌다. 내 목록 화면은 남의 것이 섞이면
+ * 안 되므로 조회할 때 user_id 를 직접 걸어 준다.
+ */
+export async function createOwnClient() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  return { supabase, userId: user?.id ?? "" };
+}
