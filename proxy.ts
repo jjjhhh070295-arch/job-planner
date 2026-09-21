@@ -61,8 +61,10 @@ export default async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // api 경로는 제외한다. 가입 API 는 로그인 전에 불러야 하기 때문.
+  // 제외하는 것들:
+  //  - api: 가입·로그인 API 는 로그인 전에 불러야 한다
+  //  - manifest.webmanifest, sw.js, 아이콘: 홈 화면 추가에 쓰이므로 로그인 없이 열려야 한다
   matcher: [
-    "/((?!api|_next/static|_next/image|favicon.ico|.*\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!api|_next/static|_next/image|favicon.ico|manifest.webmanifest|sw.js|.*\.(?:svg|png|jpg|jpeg|gif|webp|ico|webmanifest|js|json|txt)$).*)",
   ],
 };
