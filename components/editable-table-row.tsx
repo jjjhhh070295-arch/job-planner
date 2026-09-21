@@ -1,9 +1,11 @@
 "use client";
 
 import { useActionState, useEffect, useState, type ReactNode } from "react";
-import { Pencil, X } from "lucide-react";
+import { Pencil } from "lucide-react";
 
 import { FormFields, type Field } from "@/components/form-fields";
+import { FormSheet } from "@/components/ui/form-sheet";
+import { btnGhost, btnIcon, btnPrimary } from "@/components/ui/primitives";
 import type { FormState } from "@/lib/form-state";
 
 /**
@@ -39,25 +41,17 @@ export function EditableTableRow({
 
   return (
     <>
-      <tr>
+      <tr className="hover:bg-muted-100/60">
         {children}
-        <td className="px-3 py-2">
+        <td className="px-2 py-1.5">
           <div className="flex items-center justify-end">
             <button
               type="button"
-              onClick={() => setOpen((value) => !value)}
-              aria-label={open ? `${title} 수정 닫기` : `${title} 수정`}
-              aria-expanded={open}
-              className={
-                "rounded-md p-2 hover:bg-gray-100 " +
-                (open ? "text-blue-600" : "text-gray-400 hover:text-blue-600")
-              }
+              onClick={() => setOpen(true)}
+              aria-label={`${title} 수정`}
+              className={btnIcon}
             >
-              {open ? (
-                <X className="size-4" aria-hidden />
-              ) : (
-                <Pencil className="size-4" aria-hidden />
-              )}
+              <Pencil className="size-4" aria-hidden />
             </button>
             {deleteSlot}
           </div>
@@ -66,35 +60,41 @@ export function EditableTableRow({
 
       {open ? (
         <tr>
-          <td colSpan={columnCount} className="bg-blue-50/40 px-3 py-4">
-            <form action={formAction}>
-              <input type="hidden" name="id" value={id} />
+          <td colSpan={columnCount} className="p-0">
+            <FormSheet
+              open={open}
+              onClose={() => setOpen(false)}
+              title={`${title} 수정`}
+            >
+              <form action={formAction}>
+                <input type="hidden" name="id" value={id} />
 
-              <FormFields fields={fields} defaults={defaults} />
+                <FormFields fields={fields} defaults={defaults} />
 
-              {state && !state.ok ? (
-                <p className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">
-                  {state.message}
-                </p>
-              ) : null}
+                {state && !state.ok ? (
+                  <p className="mt-3 rounded-lg bg-danger-50 px-3 py-2 text-sm text-danger-700">
+                    {state.message}
+                  </p>
+                ) : null}
 
-              <div className="mt-4 flex items-center gap-2">
-                <button
-                  type="submit"
-                  disabled={pending}
-                  className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-                >
-                  {pending ? "저장 중..." : "저장"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setOpen(false)}
-                  className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50"
-                >
-                  취소
-                </button>
-              </div>
-            </form>
+                <div className="mt-4 flex gap-2">
+                  <button
+                    type="submit"
+                    disabled={pending}
+                    className={btnPrimary + " flex-1 md:flex-none"}
+                  >
+                    {pending ? "저장 중..." : "저장"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setOpen(false)}
+                    className={btnGhost}
+                  >
+                    취소
+                  </button>
+                </div>
+              </form>
+            </FormSheet>
           </td>
         </tr>
       ) : null}

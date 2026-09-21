@@ -2,19 +2,17 @@
 
 import { useRef } from "react";
 
-/** 칸반에서 단계를 옮기는 드롭다운. 고르면 바로 저장된다. */
+/** 전형 단계를 바꾸는 드롭다운. 고르면 바로 저장된다. */
 export function StatusSelect({
   action,
   id,
   status,
   statuses,
-  className = "",
 }: {
   action: (formData: FormData) => Promise<void>;
   id: string;
   status: string;
   statuses: readonly string[];
-  className?: string;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -25,11 +23,8 @@ export function StatusSelect({
         name="status"
         defaultValue={status}
         onChange={() => formRef.current?.requestSubmit()}
-        aria-label="전형 단계"
-        className={
-          "rounded border border-gray-300 bg-white px-2 py-1 text-xs outline-none focus:border-blue-500 " +
-          className
-        }
+        aria-label="전형 단계 바꾸기"
+        className="h-11 rounded-lg border border-line bg-surface px-2 text-sm text-ink-700 outline-none focus:border-brand-500"
       >
         {statuses.map((option) => (
           <option key={option} value={option}>

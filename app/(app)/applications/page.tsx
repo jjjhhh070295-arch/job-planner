@@ -1,31 +1,10 @@
-import Link from "next/link";
-
-import {
-  addApplication,
-  removeApplication,
-  updateApplication,
-  updateApplicationStatus,
-} from "./actions";
-import { STATUSES, isClosed } from "@/lib/application-status";
-import { DeleteRowButton } from "@/components/delete-row-button";
-import { EditableRow } from "@/components/editable-row";
-import { EditableTableRow } from "@/components/editable-table-row";
+import { addApplication } from "./actions";
+import { ApplicationsView, type Application } from "./applications-view";
 import { PageShell } from "@/components/page-shell";
 import { RecordForm, type Field } from "@/components/record-form";
-import { StatusSelect } from "@/components/status-select";
+import { STATUSES } from "@/lib/application-status";
 import { daysUntilTimestamp, formatDeadline, toDateInput } from "@/lib/date";
 import { createClient } from "@/lib/supabase/server";
-
-type Application = {
-  id: string;
-  company: string;
-  role: string | null;
-  season: string | null;
-  status: string;
-  deadline: string | null;
-  posting_url: string | null;
-  memo: string | null;
-};
 
 const FIELDS: Field[] = [
   { name: "company", label: "기업", required: true, placeholder: "○○전자" },
@@ -37,267 +16,42 @@ const FIELDS: Field[] = [
     type: "select",
     options: [...STATUSES],
   },
-  {
-    name: "deadline",
-    label: "마감",
-    type: "date",
-    hint: "자소서 마감일",
-  },
+  { name: "deadline", label: "마감", type: "date", hint: "자소서 마감일" },
   { name: "posting_url", label: "공고 링크", placeholder: "https://..." },
   { name: "memo", label: "메모", type: "textarea" },
 ];
 
-/** CLAUDE.md UX 원칙: 진행 중 파랑, 합격 초록, 탈락 회색 */
-function statusTone(status: string): string {
-  if (status === "최종 합격") return "bg-green-100 text-green-800";
-  if (status === "탈락") return "bg-gray-100 text-gray-500";
-  if (status === "작성 중") return "bg-gray-100 text-gray-700";
-  return "bg-blue-100 text-blue-800";
-}
-
-/** 마감 임박만 빨강. 끝난 전형은 마감일을 강조하지 않는다. */
-function DeadlineText({
-  deadline,
-  status,
-}: {
-  deadline: string | null;
-  status: string;
-}) {
-  if (!deadline) return null;
-
-  const closed = isClosed(status);
-  const days = daysUntilTimestamp(deadline);
-  const urgent = !closed && days >= 0 && days <= 3;
-  const passed = days < 0;
-
-  return (
-    <span
-      className={
-        "text-xs " +
-        (urgent ? "font-bold text-red-600" : passed ? "text-gray-400" : "text-gray-500")
-      }
-    >
-      {formatDeadline(deadline)}
-      {closed || passed ? null : ` (D-${days})`}
-      {passed ? " 마감됨" : null}
-    </span>
-  );
-}
-
-/** 수정 폼에 미리 채울 값. 마감은 date 입력칸 형식으로 바꾼다. */
-function editDefaults(item: Application) {
-  return {
-    company: item.company,
-    role: item.role,
-    season: item.season,
-    status: item.status,
-    deadline: toDateInput(item.deadline),
-    posting_url: item.posting_url,
-    memo: item.memo,
-  };
-}
-
-function Card({ item }: { item: Application }) {
-  return (
-    <li>
-      <EditableRow
-        action={updateApplication}
-        fields={FIELDS}
-        defaults={editDefaults(item)}
-        id={item.id}
-        title={item.company}
-        className="rounded-lg border border-gray-200 bg-white p-3"
-        deleteSlot={
-          <DeleteRowButton
-            action={removeApplication}
-            id={item.id}
-            label={item.company}
-          />
-        }
-      >
-        <div className="min-w-0">
-          <p className="truncate font-medium">{item.company}</p>
-          {item.role ? (
-            <p className="truncate text-sm text-gray-500">{item.role}</p>
-          ) : null}
-        </div>
-
-      {item.season ? (
-        <p className="mt-1 text-xs text-gray-400">{item.season}</p>
-      ) : null}
-
-      <div className="mt-2">
-        <DeadlineText deadline={item.deadline} status={item.status} />
-      </div>
-
-      {item.memo ? (
-        <p className="mt-2 line-clamp-3 text-xs whitespace-pre-wrap text-gray-600">
-          {item.memo}
-        </p>
-      ) : null}
-
-      <div className="mt-3 flex items-center justify-between gap-2">
-        <StatusSelect
-          action={updateApplicationStatus}
-          id={item.id}
-          status={item.status}
-          statuses={STATUSES}
-        />
-        {item.posting_url ? (
-          <a
-            href={item.posting_url}
-            target="_blank"
-            rel="noreferrer noopener"
-            className="text-xs font-medium text-blue-600 hover:underline"
-          >
-            공고
-          </a>
-        ) : null}
-      </div>
-      </EditableRow>
-    </li>
-  );
-}
-
-export default async function ApplicationsPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ view?: string }>;
-}) {
-  const { view } = await searchParams;
-  const isTable = view === "table";
-
+export default async function ApplicationsPage() {
   const supabase = await createClient();
   const { data } = await supabase
     .from("applications")
     .select("*")
-    .order("deadline", { ascending: true, nullsFirst: false });
+    .order("created_at", { ascending: false });
 
-  const items = (data ?? []) as Application[];
-
-  const toggle = (
-    <div className="flex overflow-hidden rounded-md border border-gray-300 text-sm">
-      <Link
-        href="/applications"
-        className={
-          "px-3 py-1.5 font-medium " +
-          (isTable ? "text-gray-600 hover:bg-gray-50" : "bg-blue-600 text-white")
-        }
-      >
-        칸반
-      </Link>
-      <Link
-        href="/applications?view=table"
-        className={
-          "px-3 py-1.5 font-medium " +
-          (isTable ? "bg-blue-600 text-white" : "text-gray-600 hover:bg-gray-50")
-        }
-      >
-        표
-      </Link>
-    </div>
-  );
+  // 날짜 계산은 서버에서 서울 기준으로 끝내고 문자열로 넘긴다.
+  // 브라우저 시간대에 따라 D-day 가 달라지면 안 된다.
+  const items: Application[] = (data ?? []).map((row) => {
+    const item = row as Record<string, unknown>;
+    const deadline = (item.deadline as string | null) ?? null;
+    return {
+      id: item.id as string,
+      company: item.company as string,
+      role: (item.role as string | null) ?? null,
+      season: (item.season as string | null) ?? null,
+      status: item.status as string,
+      deadline,
+      posting_url: (item.posting_url as string | null) ?? null,
+      memo: (item.memo as string | null) ?? null,
+      created_at: item.created_at as string,
+      deadlineDate: deadline ? toDateInput(deadline) : null,
+      deadlineText: deadline ? formatDeadline(deadline) : null,
+      daysLeft: deadline ? daysUntilTimestamp(deadline) : null,
+    };
+  });
 
   return (
-    <PageShell
-      title="지원 현황"
-      description={`전체 ${items.length}곳`}
-      actions={toggle}
-    >
-      {items.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-gray-300 px-4 py-10 text-center text-sm text-gray-500">
-          아직 등록한 지원이 없습니다. 아래에서 추가해 보세요.
-        </p>
-      ) : isTable ? (
-        <div className="overflow-x-auto rounded-lg border border-gray-200">
-          <table className="w-full min-w-[640px] text-sm">
-            <thead className="bg-gray-50 text-left text-xs text-gray-500">
-              <tr>
-                <th className="px-3 py-2 font-medium">기업</th>
-                <th className="px-3 py-2 font-medium">직무</th>
-                <th className="px-3 py-2 font-medium">시즌</th>
-                <th className="px-3 py-2 font-medium">마감</th>
-                <th className="px-3 py-2 font-medium">단계</th>
-                <th className="px-3 py-2" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {items.map((item) => (
-                <EditableTableRow
-                  key={item.id}
-                  action={updateApplication}
-                  fields={FIELDS}
-                  defaults={editDefaults(item)}
-                  id={item.id}
-                  title={item.company}
-                  columnCount={6}
-                  deleteSlot={
-                    <DeleteRowButton
-                      action={removeApplication}
-                      id={item.id}
-                      label={item.company}
-                    />
-                  }
-                >
-                  <td className="px-3 py-2 font-medium">{item.company}</td>
-                  <td className="px-3 py-2 text-gray-600">{item.role ?? "-"}</td>
-                  <td className="px-3 py-2 text-gray-600">
-                    {item.season ?? "-"}
-                  </td>
-                  <td className="px-3 py-2">
-                    <DeadlineText
-                      deadline={item.deadline}
-                      status={item.status}
-                    />
-                  </td>
-                  <td className="px-3 py-2">
-                    <StatusSelect
-                      action={updateApplicationStatus}
-                      id={item.id}
-                      status={item.status}
-                      statuses={STATUSES}
-                    />
-                  </td>
-                </EditableTableRow>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        // 모바일에서는 가로로 밀어서 본다.
-        <div className="-mx-4 overflow-x-auto px-4 md:mx-0 md:px-0">
-          <div className="flex gap-3 md:grid md:grid-cols-3 lg:grid-cols-6">
-            {STATUSES.map((status) => {
-              const column = items.filter((item) => item.status === status);
-              return (
-                <section
-                  key={status}
-                  className="flex w-64 shrink-0 flex-col gap-2 md:w-auto"
-                >
-                  <h2 className="flex items-center gap-2 text-sm font-medium">
-                    <span
-                      className={
-                        "rounded px-2 py-0.5 text-xs " + statusTone(status)
-                      }
-                    >
-                      {status}
-                    </span>
-                    <span className="text-xs text-gray-400">
-                      {column.length}
-                    </span>
-                  </h2>
-                  <ul className="flex flex-col gap-2">
-                    {column.map((item) => (
-                      <Card key={item.id} item={item} />
-                    ))}
-                  </ul>
-                </section>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
+    <PageShell title="지원 현황" description={`전체 ${items.length}곳`}>
+      <ApplicationsView items={items} fields={FIELDS} />
       <RecordForm
         action={addApplication}
         fields={FIELDS}
