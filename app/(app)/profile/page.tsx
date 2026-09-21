@@ -137,14 +137,14 @@ const EXPERIENCE_FIELDS: Field[] = [
 function SectionTitle({ title, count }: { title: string; count: number }) {
   return (
     <h2 className="text-base font-bold">
-      {title} <span className="text-sm font-normal text-gray-400">{count}</span>
+      {title} <span className="text-sm font-normal text-ink-400">{count}</span>
     </h2>
   );
 }
 
 function Empty({ text }: { text: string }) {
   return (
-    <p className="rounded-lg border border-dashed border-gray-300 px-4 py-6 text-center text-sm text-gray-500">
+    <p className="rounded-xl border border-dashed border-line bg-surface px-4 py-6 text-center text-sm text-ink-500">
       {text}
     </p>
   );
@@ -198,10 +198,10 @@ export default async function ProfilePage() {
                   <p className="font-medium">
                     {row.school}
                     {row.major ? (
-                      <span className="text-gray-500"> · {row.major}</span>
+                      <span className="text-ink-500"> · {row.major}</span>
                     ) : null}
                   </p>
-                  <p className="mt-0.5 text-sm text-gray-500">
+                  <p className="mt-0.5 text-sm text-ink-500">
                     {[
                       row.degree,
                       formatPeriod(row.start_date, row.end_date, "재학 중"),
@@ -211,7 +211,7 @@ export default async function ProfilePage() {
                       .join(" · ")}
                   </p>
                   {row.key_courses ? (
-                    <p className="mt-2 text-sm text-gray-600">
+                    <p className="mt-2 text-sm text-ink-500">
                       {row.key_courses}
                     </p>
                   ) : null}
@@ -260,13 +260,13 @@ export default async function ProfilePage() {
                     <p className="font-medium">
                       {row.name}
                       {row.score_or_grade ? (
-                        <span className="text-gray-500">
+                        <span className="text-ink-500">
                           {" "}
                           · {row.score_or_grade}
                         </span>
                       ) : null}
                     </p>
-                    <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-sm text-gray-500">
+                    <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-sm text-ink-500">
                       <span>{row.category}</span>
                       <span aria-hidden>·</span>
                       <span>{row.status}</span>
@@ -276,10 +276,10 @@ export default async function ProfilePage() {
                           <span
                             className={
                               urgency === "expired"
-                                ? "font-medium text-gray-500"
+                                ? "font-medium text-ink-500"
                                 : urgency === "soon"
-                                  ? "font-medium text-red-600"
-                                  : "text-gray-500"
+                                  ? "font-medium text-danger-600"
+                                  : "text-ink-500"
                             }
                           >
                             {urgency === "expired"
@@ -307,7 +307,7 @@ export default async function ProfilePage() {
       {/* ---------------- 경험 뱅크 ---------------- */}
       <section className="flex flex-col gap-3">
         <SectionTitle title="경험 뱅크" count={experiences.length} />
-        <p className="-mt-2 text-sm text-gray-500">
+        <p className="-mt-2 text-sm text-ink-500">
           상황(S) · 행동(A) · 결과(R)로 나눠 적어 두면 자소서 쓸 때 그대로 꺼내
           쓸 수 있습니다.
         </p>
@@ -335,7 +335,7 @@ export default async function ProfilePage() {
                 >
                 <div className="min-w-0 flex-1">
                   <p className="font-medium">{row.title}</p>
-                  <p className="mt-0.5 text-sm text-gray-500">
+                  <p className="mt-0.5 text-sm text-ink-500">
                     {[
                       row.org,
                       row.role,
@@ -350,7 +350,7 @@ export default async function ProfilePage() {
                       {row.tags.map((tag) => (
                         <li
                           key={tag}
-                          className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600"
+                          className="rounded-full bg-muted-100 px-2 py-0.5 text-xs text-ink-500"
                         >
                           {tag}
                         </li>
@@ -369,10 +369,10 @@ export default async function ProfilePage() {
                       .filter(([, text]) => Boolean(text))
                       .map(([label, text]) => (
                         <div key={label} className="flex gap-2">
-                          <dt className="w-8 shrink-0 text-xs font-medium text-gray-400">
+                          <dt className="w-8 shrink-0 text-xs font-medium text-ink-400">
                             {label}
                           </dt>
-                          <dd className="min-w-0 whitespace-pre-wrap text-gray-700">
+                          <dd className="min-w-0 wrap-anywhere whitespace-pre-wrap text-ink-700">
                             {text}
                           </dd>
                         </div>

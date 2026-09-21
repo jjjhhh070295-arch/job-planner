@@ -30,14 +30,14 @@ function ProgressBar({ percent }: { percent: number }) {
   const done = percent >= 100;
   return (
     <div
-      className="h-2 w-full overflow-hidden rounded-full bg-gray-200"
+      className="h-2 w-full overflow-hidden rounded-full bg-muted-100"
       role="progressbar"
       aria-valuenow={percent}
       aria-valuemin={0}
       aria-valuemax={100}
     >
       <div
-        className={"h-full " + (done ? "bg-green-500" : "bg-blue-600")}
+        className={"h-full " + (done ? "bg-success-500" : "bg-brand-600")}
         style={{ width: `${percent}%` }}
       />
     </div>
@@ -69,7 +69,7 @@ function TaskRow({
         }}
         id={task.id}
         title={task.title}
-        className="rounded-lg border border-gray-200 px-2 py-1.5"
+        className="rounded-lg border border-line px-2 py-1.5"
         deleteSlot={
           <>
             <TodayToggle
@@ -96,13 +96,13 @@ function TaskRow({
         <p
           className={
             "truncate text-sm " +
-            (task.done ? "text-gray-400 line-through" : "text-gray-800")
+            (task.done ? "text-ink-400 line-through" : "text-ink-900")
           }
         >
           {task.title}
         </p>
         {task.due_date || milestoneTitle ? (
-          <p className="truncate text-xs text-gray-400">
+          <p className="truncate text-xs text-ink-400">
             {[
               task.due_date
                 ? `${task.due_date}${overdue ? " (지남)" : ""}`
@@ -115,7 +115,7 @@ function TaskRow({
         ) : null}
       </div>
       {overdue ? (
-        <span className="shrink-0 text-xs font-medium text-red-600">지남</span>
+        <span className="shrink-0 text-xs font-medium text-danger-600">지남</span>
       ) : null}
       </div>
       </EditableRow>
@@ -234,13 +234,13 @@ export default async function RoadmapPage() {
       <section className="flex flex-col gap-3">
         <h2 className="text-base font-bold">
           목표{" "}
-          <span className="text-sm font-normal text-gray-400">
+          <span className="text-sm font-normal text-ink-400">
             {goals.length}
           </span>
         </h2>
 
         {goals.length === 0 && milestones.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-gray-300 px-4 py-8 text-center text-sm text-gray-500">
+          <p className="rounded-xl border border-dashed border-line bg-surface px-4 py-8 text-center text-sm text-ink-500">
             아직 목표가 없습니다. 최종 목표를 하나 정하고, 그 아래에 달별
             마일스톤을 붙여 보세요.
           </p>
@@ -268,14 +268,14 @@ export default async function RoadmapPage() {
                   <div className="min-w-0">
                     <p className="font-medium">{goal.title}</p>
                     {goal.due_date ? (
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-ink-500">
                         목표 시점 {goal.due_date}
                       </p>
                     ) : null}
                   </div>
 
                 {own.length === 0 ? (
-                  <p className="mt-3 text-sm text-gray-400">
+                  <p className="mt-3 text-sm text-ink-400">
                     이 목표에 달린 마일스톤이 없습니다.
                   </p>
                 ) : (
@@ -320,20 +320,20 @@ export default async function RoadmapPage() {
                             <div className="flex items-center justify-between gap-2">
                               <p className="min-w-0 truncate text-sm font-medium">
                                 {milestone.month ? (
-                                  <span className="text-gray-400">
+                                  <span className="text-ink-400">
                                     {milestone.month}{" "}
                                   </span>
                                 ) : null}
                                 {milestone.title}
                               </p>
-                              <span className="shrink-0 text-xs text-gray-500">
+                              <span className="shrink-0 text-xs text-ink-500">
                                 {current} / {milestone.target_value}
                               </span>
                             </div>
                             <div className="mt-1.5">
                               <ProgressBar percent={percent} />
                             </div>
-                            <p className="mt-1 text-xs text-gray-400">
+                            <p className="mt-1 text-xs text-ink-400">
                               {sourceLabel(milestone.auto_source)} · {percent}%
                             </p>
                           </EditableRow>
@@ -350,8 +350,8 @@ export default async function RoadmapPage() {
 
         {/* 목표에 안 묶인 마일스톤 */}
         {milestones.some((m) => !m.goal_id) ? (
-          <div className="rounded-lg border border-gray-200 p-4">
-            <p className="text-sm font-medium text-gray-500">
+          <div className="rounded-xl border border-line bg-surface p-4">
+            <p className="text-sm font-medium text-ink-500">
               목표에 묶이지 않은 마일스톤
             </p>
             <ul className="mt-3 flex flex-col gap-3">
@@ -395,7 +395,7 @@ export default async function RoadmapPage() {
                           <p className="min-w-0 truncate text-sm font-medium">
                             {milestone.title}
                           </p>
-                          <span className="shrink-0 text-xs text-gray-500">
+                          <span className="shrink-0 text-xs text-ink-500">
                             {current} / {milestone.target_value}
                           </span>
                         </div>
@@ -429,11 +429,11 @@ export default async function RoadmapPage() {
         <h2 className="text-base font-bold">할 일</h2>
 
         <div className="flex flex-col gap-2">
-          <h3 className="text-sm font-medium text-gray-600">
+          <h3 className="text-sm font-medium text-ink-500">
             오늘 {todayTasks.length > 0 ? `(${todayTasks.length})` : ""}
           </h3>
           {todayTasks.length === 0 ? (
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-ink-400">
               별(★)을 눌러 오늘 할 일로 올리세요.
             </p>
           ) : (
@@ -455,11 +455,11 @@ export default async function RoadmapPage() {
         </div>
 
         <div className="flex flex-col gap-2">
-          <h3 className="text-sm font-medium text-gray-600">
+          <h3 className="text-sm font-medium text-ink-500">
             이번 주 {weekTasks.length > 0 ? `(${weekTasks.length})` : ""}
           </h3>
           {weekTasks.length === 0 ? (
-            <p className="text-sm text-gray-400">이번 주에 남은 일이 없습니다.</p>
+            <p className="text-sm text-ink-400">이번 주에 남은 일이 없습니다.</p>
           ) : (
             <ul className="flex flex-col gap-1.5">
               {weekTasks.map((task) => (
@@ -480,7 +480,7 @@ export default async function RoadmapPage() {
 
         {laterTasks.length > 0 ? (
           <div className="flex flex-col gap-2">
-            <h3 className="text-sm font-medium text-gray-600">
+            <h3 className="text-sm font-medium text-ink-500">
               그 밖에 ({laterTasks.length})
             </h3>
             <ul className="flex flex-col gap-1.5">
@@ -502,7 +502,7 @@ export default async function RoadmapPage() {
 
         {doneTasks.length > 0 ? (
           <details>
-            <summary className="cursor-pointer text-sm font-medium text-blue-600">
+            <summary className="cursor-pointer text-sm font-medium text-brand-600">
               끝낸 일 {doneTasks.length}개 보기
             </summary>
             <ul className="mt-2 flex flex-col gap-1.5">

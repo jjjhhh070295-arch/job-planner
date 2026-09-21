@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
+import { btnPrimary, inputClass } from "@/components/ui/primitives";
 import {
   DISPLAY_NAME_RULE_TEXT,
   USERNAME_RULE_TEXT,
@@ -68,7 +69,7 @@ export default function SignupPage() {
     <main className="flex flex-1 items-center justify-center p-6">
       <div className="w-full max-w-sm">
         <h1 className="text-2xl font-bold">가입하기</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="mt-1 text-sm text-ink-500">
           초대 코드가 있어야 가입할 수 있습니다.
         </p>
 
@@ -82,9 +83,9 @@ export default function SignupPage() {
               autoComplete="username"
               autoCapitalize="none"
               required
-              className="rounded-md border border-gray-300 px-3 py-2 outline-none focus:border-blue-500"
+              className={inputClass}
             />
-            <span className="text-xs text-gray-500">{USERNAME_RULE_TEXT}</span>
+            <span className="text-xs text-ink-500">{USERNAME_RULE_TEXT}</span>
           </label>
 
           <label className="flex flex-col gap-1.5">
@@ -94,9 +95,9 @@ export default function SignupPage() {
               value={displayName}
               onChange={(event) => setDisplayName(event.target.value)}
               required
-              className="rounded-md border border-gray-300 px-3 py-2 outline-none focus:border-blue-500"
+              className={inputClass}
             />
-            <span className="text-xs text-gray-500">
+            <span className="text-xs text-ink-500">
               화면에 보이는 이름입니다. {DISPLAY_NAME_RULE_TEXT}
             </span>
           </label>
@@ -110,9 +111,9 @@ export default function SignupPage() {
               autoComplete="new-password"
               minLength={8}
               required
-              className="rounded-md border border-gray-300 px-3 py-2 outline-none focus:border-blue-500"
+              className={inputClass}
             />
-            <span className="text-xs text-gray-500">8자 이상</span>
+            <span className="text-xs text-ink-500">8자 이상</span>
           </label>
 
           <label className="flex flex-col gap-1.5">
@@ -123,7 +124,7 @@ export default function SignupPage() {
               onChange={(event) => setPasswordConfirm(event.target.value)}
               autoComplete="new-password"
               required
-              className="rounded-md border border-gray-300 px-3 py-2 outline-none focus:border-blue-500"
+              className={inputClass}
             />
           </label>
 
@@ -135,15 +136,15 @@ export default function SignupPage() {
               onChange={(event) => setInviteCode(event.target.value)}
               autoCapitalize="characters"
               required
-              className="rounded-md border border-gray-300 px-3 py-2 uppercase outline-none focus:border-blue-500"
+              className={inputClass + " uppercase"}
             />
-            <span className="text-xs text-gray-500">
+            <span className="text-xs text-ink-500">
               대소문자는 구분하지 않습니다.
             </span>
           </label>
 
           {error ? (
-            <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">
+            <p className="rounded-md bg-danger-50 px-3 py-2 text-sm text-danger-600">
               {error}
             </p>
           ) : null}
@@ -151,17 +152,17 @@ export default function SignupPage() {
           <button
             type="submit"
             disabled={pending}
-            className="mt-2 rounded-md bg-blue-600 px-4 py-2.5 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            className={btnPrimary + " mt-2 w-full"}
           >
             {pending ? "가입 중..." : "가입하기"}
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-gray-500">
+        <p className="mt-6 text-center text-sm text-ink-500">
           이미 계정이 있으신가요?{" "}
           <Link
             href="/login"
-            className="font-medium text-blue-600 hover:underline"
+            className="font-medium text-brand-600 hover:underline"
           >
             로그인
           </Link>

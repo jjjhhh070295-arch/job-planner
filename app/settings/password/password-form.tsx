@@ -4,9 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
 import { MIN_PASSWORD_LENGTH, PASSWORD_RULE_TEXT } from "@/lib/auth/password";
-
-const inputClass =
-  "rounded-md border border-gray-300 px-3 py-2 outline-none focus:border-blue-500";
+import { btnPrimary, inputClass } from "@/components/ui/primitives";
 
 export function PasswordForm({ forced }: { forced: boolean }) {
   const router = useRouter();
@@ -50,7 +48,7 @@ export function PasswordForm({ forced }: { forced: boolean }) {
 
   if (done) {
     return (
-      <div className="rounded-md bg-green-50 px-4 py-3 text-sm text-green-700">
+      <div className="rounded-md bg-success-50 px-4 py-3 text-sm text-success-700">
         비밀번호를 바꿨습니다.
         {forced ? " 이제 다른 화면을 이용할 수 있습니다." : null}
       </div>
@@ -82,7 +80,7 @@ export function PasswordForm({ forced }: { forced: boolean }) {
           required
           className={inputClass}
         />
-        <span className="text-xs text-gray-500">{PASSWORD_RULE_TEXT}</span>
+        <span className="text-xs text-ink-500">{PASSWORD_RULE_TEXT}</span>
       </label>
 
       <label className="flex flex-col gap-1.5">
@@ -98,7 +96,7 @@ export function PasswordForm({ forced }: { forced: boolean }) {
       </label>
 
       {error ? (
-        <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">
+        <p className="rounded-md bg-danger-50 px-3 py-2 text-sm text-danger-600">
           {error}
         </p>
       ) : null}
@@ -106,7 +104,7 @@ export function PasswordForm({ forced }: { forced: boolean }) {
       <button
         type="submit"
         disabled={pending}
-        className="mt-2 rounded-md bg-blue-600 px-4 py-2.5 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+        className={btnPrimary + " mt-2 w-full"}
       >
         {pending ? "변경 중..." : "비밀번호 변경"}
       </button>

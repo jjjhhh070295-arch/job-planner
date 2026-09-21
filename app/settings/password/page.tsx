@@ -15,12 +15,12 @@ export default async function PasswordSettingsPage() {
       <h1 className="text-2xl font-bold">비밀번호 변경</h1>
 
       {profile.mustChangePassword ? (
-        <p className="mt-4 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800">
+        <p className="mt-4 rounded-md bg-muted-100 px-3 py-2 text-sm text-muted-600">
           관리자가 발급한 임시 비밀번호로 로그인했습니다. 새 비밀번호를 정해야
           다른 화면을 이용할 수 있습니다.
         </p>
       ) : (
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="mt-1 text-sm text-ink-500">
           안전을 위해 기존 비밀번호를 함께 확인합니다.
         </p>
       )}
@@ -30,8 +30,8 @@ export default async function PasswordSettingsPage() {
       </div>
 
       {profile.mustChangePassword ? null : (
-        <p className="mt-6 text-center text-sm text-gray-500">
-          <Link href="/" className="font-medium text-blue-600 hover:underline">
+        <p className="mt-6 text-center text-sm text-ink-500">
+          <Link href="/" className="font-medium text-brand-600 hover:underline">
             홈으로
           </Link>
         </p>

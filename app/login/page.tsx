@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
+import { btnPrimary, inputClass } from "@/components/ui/primitives";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -38,7 +39,7 @@ export default function LoginPage() {
     <main className="flex flex-1 items-center justify-center p-6">
       <div className="w-full max-w-sm">
         <h1 className="text-2xl font-bold">취업 플래너</h1>
-        <p className="mt-1 text-sm text-gray-500">아이디로 로그인하세요.</p>
+        <p className="mt-1 text-sm text-ink-500">아이디로 로그인하세요.</p>
 
         <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-4">
           <label className="flex flex-col gap-1.5">
@@ -50,7 +51,7 @@ export default function LoginPage() {
               autoComplete="username"
               autoCapitalize="none"
               required
-              className="rounded-md border border-gray-300 px-3 py-2 outline-none focus:border-blue-500"
+              className={inputClass}
             />
           </label>
 
@@ -62,12 +63,12 @@ export default function LoginPage() {
               onChange={(event) => setPassword(event.target.value)}
               autoComplete="current-password"
               required
-              className="rounded-md border border-gray-300 px-3 py-2 outline-none focus:border-blue-500"
+              className={inputClass}
             />
           </label>
 
           {error ? (
-            <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">
+            <p className="rounded-md bg-danger-50 px-3 py-2 text-sm text-danger-600">
               {error}
             </p>
           ) : null}
@@ -75,17 +76,17 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={pending}
-            className="mt-2 rounded-md bg-blue-600 px-4 py-2.5 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            className={btnPrimary + " mt-2 w-full"}
           >
             {pending ? "로그인 중..." : "로그인"}
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-gray-500">
+        <p className="mt-6 text-center text-sm text-ink-500">
           초대 코드를 받으셨나요?{" "}
           <Link
             href="/signup"
-            className="font-medium text-blue-600 hover:underline"
+            className="font-medium text-brand-600 hover:underline"
           >
             가입하기
           </Link>

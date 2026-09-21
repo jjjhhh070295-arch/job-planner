@@ -126,7 +126,7 @@ export default async function LibraryPage({
   ];
 
   const inputClass =
-    "rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500";
+    "rounded-md border border-line px-3 py-2 text-sm outline-none focus:border-brand-500";
 
   return (
     <PageShell
@@ -171,14 +171,14 @@ export default async function LibraryPage({
           </select>
           <button
             type="submit"
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
           >
             검색
           </button>
         </div>
       </form>
 
-      <p className="-mt-2 text-sm text-gray-500">
+      <p className="-mt-2 text-sm text-ink-500">
         {keyword || category || applicationId
           ? `검색 결과 ${essays.length}건`
           : `전체 ${essays.length}건`}
@@ -186,7 +186,7 @@ export default async function LibraryPage({
 
       {/* ---------------- 목록 ---------------- */}
       {essays.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-gray-300 px-4 py-10 text-center text-sm text-gray-500">
+        <p className="rounded-xl border border-dashed border-line bg-surface px-4 py-10 text-center text-sm text-ink-500">
           {keyword || category || applicationId
             ? "조건에 맞는 자소서가 없습니다."
             : "아직 저장한 자소서가 없습니다. 아래에서 추가해 보세요."}
@@ -222,10 +222,10 @@ export default async function LibraryPage({
                   }
                 >
                   <div className="min-w-0">
-                    <p className="font-medium whitespace-pre-wrap">
+                    <p className="font-medium wrap-anywhere whitespace-pre-wrap">
                       {essay.question}
                     </p>
-                    <p className="mt-1 flex flex-wrap items-center gap-x-2 text-xs text-gray-500">
+                    <p className="mt-1 flex flex-wrap items-center gap-x-2 text-xs text-ink-500">
                       {essay.application_id ? (
                         <span>
                           {companyById.get(essay.application_id) ??
@@ -241,7 +241,7 @@ export default async function LibraryPage({
                         </>
                       ) : null}
                       <span aria-hidden>·</span>
-                      <span className={over ? "font-medium text-red-600" : ""}>
+                      <span className={over ? "font-medium text-danger-600" : ""}>
                         {length}자
                         {essay.char_limit ? ` / ${essay.char_limit}자` : ""}
                         {over ? " 초과" : ""}
@@ -258,15 +258,15 @@ export default async function LibraryPage({
 
                     {essay.answer ? (
                     <details className="mt-3">
-                      <summary className="cursor-pointer text-sm font-medium text-blue-600">
+                      <summary className="cursor-pointer text-sm font-medium text-brand-600">
                         답변 보기
                       </summary>
-                      <p className="mt-2 whitespace-pre-wrap text-sm text-gray-700">
+                      <p className="mt-2 wrap-anywhere whitespace-pre-wrap text-sm text-ink-700">
                         {essay.answer}
                       </p>
                     </details>
                   ) : (
-                    <p className="mt-3 text-sm text-gray-400">
+                    <p className="mt-3 text-sm text-ink-400">
                       아직 답변을 쓰지 않았습니다.
                     </p>
                   )}

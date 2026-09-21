@@ -163,20 +163,20 @@ export default async function CalendarPage({
       <Link
         href={`/calendar?month=${shiftMonth(month, -1)}`}
         aria-label="이전 달"
-        className="rounded-md border border-gray-300 p-1.5 text-gray-600 hover:bg-gray-50"
+        className="rounded-md border border-line p-1.5 text-ink-500 hover:bg-muted-100"
       >
         <ChevronLeft className="size-4" aria-hidden />
       </Link>
       <Link
         href="/calendar"
-        className="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-50"
+        className="rounded-md border border-line px-3 py-1.5 text-sm font-medium text-ink-500 hover:bg-muted-100"
       >
         이번 달
       </Link>
       <Link
         href={`/calendar?month=${shiftMonth(month, 1)}`}
         aria-label="다음 달"
-        className="rounded-md border border-gray-300 p-1.5 text-gray-600 hover:bg-gray-50"
+        className="rounded-md border border-line p-1.5 text-ink-500 hover:bg-muted-100"
       >
         <ChevronRight className="size-4" aria-hidden />
       </Link>
@@ -191,17 +191,17 @@ export default async function CalendarPage({
     <PageShell title={monthLabel(month)} description="마감·할 일·일정을 한 화면에서 봅니다." actions={nav}>
       {/* ---------------- 데스크톱: 월간 격자 ---------------- */}
       <div className="hidden md:block">
-        <div className="grid grid-cols-7 border-t border-l border-gray-200">
+        <div className="grid grid-cols-7 border-t border-l border-line">
           {WEEKDAY_LABELS.map((label, index) => (
             <div
               key={label}
               className={
-                "border-r border-b border-gray-200 bg-gray-50 px-2 py-1.5 text-center text-xs font-medium " +
+                "border-r border-b border-line bg-muted-100 px-2 py-1.5 text-center text-xs font-medium " +
                 (index === 5
-                  ? "text-blue-600"
+                  ? "text-brand-600"
                   : index === 6
-                    ? "text-red-600"
-                    : "text-gray-600")
+                    ? "text-danger-600"
+                    : "text-ink-500")
               }
             >
               {label}
@@ -215,8 +215,8 @@ export default async function CalendarPage({
               <div
                 key={day.date}
                 className={
-                  "min-h-24 border-r border-b border-gray-200 p-1.5 " +
-                  (day.inMonth ? "" : "bg-gray-50/60")
+                  "min-h-24 border-r border-b border-line p-1.5 " +
+                  (day.inMonth ? "" : "bg-muted-100/60")
                 }
               >
                 <div className="mb-1 flex items-center justify-between">
@@ -224,14 +224,14 @@ export default async function CalendarPage({
                     className={
                       "inline-flex size-5 items-center justify-center rounded-full text-xs " +
                       (isToday
-                        ? "bg-blue-600 font-bold text-white"
+                        ? "bg-brand-600 font-bold text-white"
                         : day.inMonth
                           ? day.weekday === 0
-                            ? "text-red-600"
+                            ? "text-danger-600"
                             : day.weekday === 6
-                              ? "text-blue-600"
-                              : "text-gray-700"
-                          : "text-gray-300")
+                              ? "text-brand-600"
+                              : "text-ink-700"
+                          : "text-ink-400")
                     }
                   >
                     {Number(day.date.slice(8))}
@@ -254,7 +254,7 @@ export default async function CalendarPage({
                     </li>
                   ))}
                   {items.length > 3 ? (
-                    <li className="px-1 text-[11px] text-gray-400">
+                    <li className="px-1 text-[11px] text-ink-400">
                       +{items.length - 3}건
                     </li>
                   ) : null}
@@ -268,7 +268,7 @@ export default async function CalendarPage({
       {/* ---------------- 모바일: 날짜별 목록 ---------------- */}
       <div className="md:hidden">
         {daysWithItems.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-gray-300 px-4 py-10 text-center text-sm text-gray-500">
+          <p className="rounded-xl border border-dashed border-line bg-surface px-4 py-10 text-center text-sm text-ink-500">
             이 달에는 표시할 일정이 없습니다.
           </p>
         ) : (
@@ -281,7 +281,7 @@ export default async function CalendarPage({
                   <p
                     className={
                       "mb-1.5 text-sm font-medium " +
-                      (isToday ? "text-blue-600" : "text-gray-700")
+                      (isToday ? "text-brand-600" : "text-ink-700")
                     }
                   >
                     {Number(day.date.slice(5, 7))}월 {Number(day.date.slice(8))}일
@@ -294,7 +294,7 @@ export default async function CalendarPage({
                     {items.map((item) => (
                       <li
                         key={item.id}
-                        className="flex items-center gap-2 rounded-md border border-gray-200 px-2 py-1.5"
+                        className="flex items-center gap-2 rounded-md border border-line px-2 py-1.5"
                       >
                         <span
                           className={
@@ -308,7 +308,7 @@ export default async function CalendarPage({
                           {item.label}
                         </span>
                         {item.time ? (
-                          <span className="shrink-0 text-xs text-gray-400">
+                          <span className="shrink-0 text-xs text-ink-400">
                             {item.time}
                           </span>
                         ) : null}
@@ -326,13 +326,13 @@ export default async function CalendarPage({
       <section className="flex flex-col gap-3">
         <h2 className="text-base font-bold">
           이 달의 내 일정{" "}
-          <span className="text-sm font-normal text-gray-400">
+          <span className="text-sm font-normal text-ink-400">
             {events.length}
           </span>
         </h2>
 
         {events.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-gray-300 px-4 py-6 text-center text-sm text-gray-500">
+          <p className="rounded-xl border border-dashed border-line bg-surface px-4 py-6 text-center text-sm text-ink-500">
             직접 넣은 일정이 없습니다. 시험일이나 면접 일정을 추가해 보세요.
             <br />
             마감과 할 일은 지원 현황·로드맵에서 자동으로 올라옵니다.
@@ -378,7 +378,7 @@ export default async function CalendarPage({
                       </span>
                       {event.title}
                     </p>
-                    <p className="mt-0.5 text-sm text-gray-500">
+                    <p className="mt-0.5 text-sm text-ink-500">
                       {toDateInput(event.start_at)}
                       {event.all_day
                         ? " · 하루 종일"
@@ -390,7 +390,7 @@ export default async function CalendarPage({
                         : ""}
                     </p>
                     {event.memo ? (
-                      <p className="mt-2 text-sm whitespace-pre-wrap text-gray-600">
+                      <p className="mt-2 text-sm wrap-anywhere whitespace-pre-wrap text-ink-500">
                         {event.memo}
                       </p>
                     ) : null}

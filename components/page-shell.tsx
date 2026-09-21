@@ -27,22 +27,3 @@ export function PageShell({
     </main>
   );
 }
-
-/** 기능이 아직 없는 화면에 쓰는 자리 표시. 무엇이 들어올지 적어 둔다. */
-export function ComingSoon({ items }: { items: string[] }) {
-  return (
-    <div className="rounded-xl border border-dashed border-line bg-surface p-5">
-      <p className="text-sm font-medium text-ink-700">
-        아직 만들지 않은 화면입니다. 여기에 들어올 내용:
-      </p>
-      <ul className="mt-3 flex flex-col gap-1.5 text-sm text-ink-500">
-        {items.map((item) => (
-          <li key={item} className="flex gap-2">
-            <span aria-hidden>·</span>
-            <span>{item}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}

@@ -87,18 +87,18 @@ export type CalendarItem = {
   href?: string;
 };
 
-/** CLAUDE.md UX 원칙에 맞춘 색. 마감은 빨강, 할 일은 파랑. */
+/**
+ * 색은 파랑 중심에 상태 색 셋(빨강·초록·회색)만 쓴다.
+ * 시험·면접·개인은 색 대신 글자(태그 이름)로 구분한다.
+ * 색을 늘리면 "빨강 = 급함" 이라는 약속이 흐려진다.
+ */
 export function itemTone(type: CalendarItem["type"]): string {
   switch (type) {
     case "마감":
-      return "bg-red-100 text-red-800";
+      return "bg-danger-50 text-danger-700";
     case "할 일":
-      return "bg-blue-100 text-blue-800";
-    case "시험":
-      return "bg-purple-100 text-purple-800";
-    case "면접":
-      return "bg-amber-100 text-amber-900";
+      return "bg-brand-50 text-brand-700";
     default:
-      return "bg-gray-100 text-gray-700";
+      return "bg-muted-100 text-muted-600";
   }
 }
