@@ -84,7 +84,7 @@ export default async function CalendarPage({
 
   const supabase = await createClient();
 
-  const [appResult, taskResult, eventResult] = await Promise.all([
+  const [appResult, taskResult, eventResult, specResult] = await Promise.all([
     supabase
       .from("applications")
       .select("id, company, role, status, deadline")
@@ -103,6 +103,11 @@ export default async function CalendarPage({
       .gte("start_at", fromIso)
       .lt("start_at", toIso)
       .order("start_at"),
+    // 목표로 삼은 시험만 가져온다. 공용 시험 전부를 띄우면 달력이 남의 일정으로 찬다.
+    supabase
+      .from("user_specs")
+      .select("id, name, target_exam_id, exams(name, round, reg_start, reg_end, exam_date)")
+      .not("target_exam_id", "is", null),
   ]);
 
   const events = (eventResult.data ?? []) as EventRow[];
@@ -156,6 +161,49 @@ export default async function CalendarPage({
       label: event.title,
       time: event.all_day ? undefined : toTimeInput(event.start_at),
     });
+  }
+
+  // 목표 시험의 접수 시작·접수 마감·시험일을 이 달 범위 안에서만 올린다.
+  for (const row of specResult.data ?? []) {
+    // PostgREST 는 이어 붙인 표를 배열로 돌려준다. 여기서는 하나만 쓴다.
+    const spec = row as unknown as {
+      id: string;
+      exams:
+        | {
+            name: string;
+            round: string | null;
+            reg_start: string | null;
+            reg_end: string | null;
+            exam_date: string | null;
+          }
+        | Array<{
+            name: string;
+            round: string | null;
+            reg_start: string | null;
+            reg_end: string | null;
+            exam_date: string | null;
+          }>
+        | null;
+    };
+    const exam = Array.isArray(spec.exams) ? (spec.exams[0] ?? null) : spec.exams;
+    if (!exam) continue;
+
+    const label = [exam.name, exam.round].filter(Boolean).join(" ");
+    const entries: { date: string | null; type: CalendarItem["type"]; suffix: string }[] = [
+      { date: exam.reg_start, type: "접수", suffix: "접수 시작" },
+      { date: exam.reg_end, type: "마감", suffix: "접수 마감" },
+      { date: exam.exam_date, type: "시험", suffix: "시험일" },
+    ];
+
+    for (const entry of entries) {
+      if (!entry.date) continue;
+      if (entry.date < firstDate || entry.date > lastDate) continue;
+      push(entry.date, {
+        id: `exam-${spec.id}-${entry.suffix}`,
+        type: entry.type,
+        label: `${label} ${entry.suffix}`,
+      });
+    }
   }
 
   const nav = (

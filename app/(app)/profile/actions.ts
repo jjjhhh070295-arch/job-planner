@@ -87,6 +87,7 @@ export async function addSpec(
     score_or_grade: value(formData, "score_or_grade"),
     acquired_date: value(formData, "acquired_date"),
     expiry_date: value(formData, "expiry_date"),
+    target_exam_id: value(formData, "target_exam_id"),
   });
 
   if (error) return failure(error);
@@ -201,6 +202,7 @@ export async function updateSpec(
       score_or_grade: value(formData, "score_or_grade"),
       acquired_date: value(formData, "acquired_date"),
       expiry_date: value(formData, "expiry_date"),
+      target_exam_id: value(formData, "target_exam_id"),
     })
     .eq("id", id);
 
@@ -208,6 +210,7 @@ export async function updateSpec(
 
   revalidatePath("/profile");
   revalidatePath("/");
+  revalidatePath("/calendar");
   return { ok: true, message: "수정했습니다." };
 }
 

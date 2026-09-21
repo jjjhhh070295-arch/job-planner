@@ -33,6 +33,7 @@ type Spec = {
   score_or_grade: string | null;
   acquired_date: string | null;
   expiry_date: string | null;
+  target_exam_id: string | null;
 };
 
 type Experience = {
@@ -73,7 +74,10 @@ const EDUCATION_FIELDS: Field[] = [
   },
 ];
 
-const SPEC_FIELDS: Field[] = [
+function buildSpecFields(
+  exams: { id: string; label: string }[],
+): Field[] {
+  return [
   { name: "name", label: "이름", required: true, placeholder: "토익 / SQLD" },
   {
     name: "category",
@@ -89,13 +93,25 @@ const SPEC_FIELDS: Field[] = [
   },
   { name: "score_or_grade", label: "점수·등급", placeholder: "905 / 1급" },
   { name: "acquired_date", label: "취득일", type: "date" },
-  {
-    name: "expiry_date",
-    label: "유효기간",
-    type: "date",
-    hint: "어학 점수는 보통 2년. 대시보드에서 D-day로 알려 줍니다",
-  },
-];
+    {
+      name: "expiry_date",
+      label: "유효기간",
+      type: "date",
+      hint: "어학 점수는 보통 2년. 대시보드에서 D-day로 알려 줍니다",
+    },
+    {
+      name: "target_exam_id",
+      label: "목표 시험",
+      type: "select",
+      wide: true,
+      choices: [
+        { value: "", label: "선택 안 함" },
+        ...exams.map((exam) => ({ value: exam.id, label: exam.label })),
+      ],
+      hint: "고르면 접수일과 시험일이 캘린더에 뜹니다",
+    },
+  ];
+}
 
 const EXPERIENCE_FIELDS: Field[] = [
   {
@@ -154,11 +170,32 @@ export default async function ProfilePage() {
   const supabase = await createClient();
 
   // RLS 덕분에 본인 것만 돌아온다.
-  const [educationResult, specResult, experienceResult] = await Promise.all([
-    supabase.from("education").select("*").order("start_date", { ascending: false }),
-    supabase.from("user_specs").select("*").order("acquired_date", { ascending: false }),
-    supabase.from("experiences").select("*").order("period_start", { ascending: false }),
-  ]);
+  const [educationResult, specResult, experienceResult, examResult] =
+    await Promise.all([
+      supabase.from("education").select("*").order("start_date", { ascending: false }),
+      supabase.from("user_specs").select("*").order("acquired_date", { ascending: false }),
+      supabase.from("experiences").select("*").order("period_start", { ascending: false }),
+      // 공용 테이블이라 모두가 읽을 수 있다.
+      supabase
+        .from("exams")
+        .select("id, name, round, exam_date")
+        .order("exam_date", { ascending: true, nullsFirst: false }),
+    ]);
+
+  const examOptions = (examResult.data ?? []).map((row) => {
+    const r = row as {
+      id: string;
+      name: string;
+      round: string | null;
+      exam_date: string | null;
+    };
+    return {
+      id: r.id,
+      label: [r.name, r.round, r.exam_date].filter(Boolean).join(" · "),
+    };
+  });
+  const examLabel = new Map(examOptions.map((e) => [e.id, e.label]));
+  const SPEC_FIELDS = buildSpecFields(examOptions);
 
   const education = (educationResult.data ?? []) as Education[];
   const specs = (specResult.data ?? []) as Spec[];
@@ -270,6 +307,14 @@ export default async function ProfilePage() {
                       <span>{row.category}</span>
                       <span aria-hidden>·</span>
                       <span>{row.status}</span>
+                      {row.target_exam_id ? (
+                        <>
+                          <span aria-hidden>·</span>
+                          <span className="text-brand-600">
+                            목표: {examLabel.get(row.target_exam_id) ?? "삭제된 시험"}
+                          </span>
+                        </>
+                      ) : null}
                       {row.expiry_date ? (
                         <>
                           <span aria-hidden>·</span>

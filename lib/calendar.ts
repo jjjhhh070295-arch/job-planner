@@ -80,7 +80,7 @@ export function monthRange(month: string): { fromIso: string; toIso: string } {
 export type CalendarItem = {
   id: string;
   /** 표시 색과 묶음 */
-  type: "마감" | "할 일" | "시험" | "면접" | "개인" | "기타";
+  type: "마감" | "접수" | "할 일" | "시험" | "면접" | "개인" | "기타";
   label: string;
   /** 시각이 있으면 "18:00" */
   time?: string;
@@ -96,6 +96,7 @@ export function itemTone(type: CalendarItem["type"]): string {
   switch (type) {
     case "마감":
       return "bg-danger-50 text-danger-700";
+    case "접수":
     case "할 일":
       return "bg-brand-50 text-brand-700";
     default:

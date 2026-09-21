@@ -8,6 +8,7 @@ import {
   MessagesSquare,
   Route,
   Settings,
+  CalendarCheck,
   ShieldUser,
   Ticket,
 } from "lucide-react";
@@ -79,6 +80,10 @@ export function Sidebar({ displayName, username, isAdmin }: Props) {
             <Link href="/admin/feedback" className={subLink}>
               <MessageSquare className="size-4 shrink-0" aria-hidden />
               받은 의견
+            </Link>
+            <Link href="/admin/exams" className={subLink}>
+              <CalendarCheck className="size-4 shrink-0" aria-hidden />
+              시험 일정
             </Link>
           </>
         ) : null}
