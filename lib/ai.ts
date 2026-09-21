@@ -71,10 +71,13 @@ export async function callAI<T>({
   prompt,
   schema,
   maxOutputTokens = 8192,
+  image,
 }: {
   prompt: string;
   schema: Record<string, unknown>;
   maxOutputTokens?: number;
+  /** 이미지에서 값을 읽어야 할 때 (공부 시간 캡처 등) */
+  image?: { base64: string; mimeType: string };
 }): Promise<T> {
   const key = process.env.GEMINI_API_KEY;
   if (!key) {
@@ -95,7 +98,21 @@ export async function callAI<T>({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
+          contents: [
+            {
+              parts: image
+                ? [
+                    { text: prompt },
+                    {
+                      inline_data: {
+                        mime_type: image.mimeType,
+                        data: image.base64,
+                      },
+                    },
+                  ]
+                : [{ text: prompt }],
+            },
+          ],
           generationConfig: {
             temperature: 0,
             responseMimeType: "application/json",

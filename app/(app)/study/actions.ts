@@ -159,3 +159,52 @@ export async function removeSession(formData: FormData): Promise<void> {
 
   revalidateAll();
 }
+
+/** 캡처에서 읽은 값을 사람이 확인·수정한 뒤 저장한다. */
+export async function saveCaptureSession(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const { supabase, userId } = await requireUser();
+
+  const subject = value(formData, "subject");
+  if (!subject) return { ok: false, message: "과목을 입력해 주세요." };
+
+  const date = value(formData, "date");
+  if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return { ok: false, message: "날짜를 골라 주세요." };
+  }
+
+  const minutesRaw = value(formData, "minutes");
+  const minutes = minutesRaw ? Number.parseInt(minutesRaw, 10) : NaN;
+  if (Number.isNaN(minutes) || minutes < 1 || minutes > 1440) {
+    return { ok: false, message: "공부 시간은 1~1440분 사이로 넣어 주세요." };
+  }
+
+  const capturePath = value(formData, "capture_path");
+  // 남의 폴더 경로를 밀어 넣지 못하게 막는다.
+  if (capturePath && !capturePath.startsWith(`${userId}/`)) {
+    return { ok: false, message: "잘못된 파일 경로입니다." };
+  }
+
+  const startedAt = new Date(`${date}T00:00:00+09:00`);
+  const endedAt = new Date(startedAt.getTime() + minutes * 60_000);
+
+  const { error } = await supabase.from("study_sessions").insert({
+    user_id: userId,
+    subject,
+    started_at: startedAt.toISOString(),
+    ended_at: endedAt.toISOString(),
+    source: "capture",
+    capture_path: capturePath,
+    milestone_id: value(formData, "milestone_id"),
+  });
+
+  if (error) {
+    console.error("[study] 캡처 기록 저장 실패", error.message);
+    return { ok: false, message: "저장하지 못했습니다." };
+  }
+
+  revalidateAll();
+  return { ok: true, message: `${minutes}분을 기록했습니다.` };
+}

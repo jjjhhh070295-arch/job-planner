@@ -1,4 +1,5 @@
 import { addManualSession, removeSession } from "./actions";
+import { CaptureUpload } from "./capture-upload";
 import { TimerCard } from "./timer-card";
 import { DeleteRowButton } from "@/components/delete-row-button";
 import { PageShell } from "@/components/page-shell";
@@ -11,6 +12,7 @@ import {
   Tag,
 } from "@/components/ui/primitives";
 import { formatYearMonth, mondayOf, toDateInput, todayInSeoul } from "@/lib/date";
+import { getCurrentProfile } from "@/lib/auth/current-user";
 import { createClient } from "@/lib/supabase/server";
 
 type SessionRow = {
@@ -49,6 +51,7 @@ function addDays(date: string, days: number): string {
 
 export default async function StudyPage() {
   const supabase = await createClient();
+  const profile = await getCurrentProfile();
 
   const [sessionResult, milestoneResult] = await Promise.all([
     supabase
@@ -184,6 +187,10 @@ export default async function StudyPage() {
         milestones={milestones}
         subjects={[...bySubject.keys()].slice(0, 20)}
       />
+
+      {profile ? (
+        <CaptureUpload userId={profile.userId} milestones={milestones} />
+      ) : null}
 
       {/* ---------------- 과목별 ---------------- */}
       <Card>
