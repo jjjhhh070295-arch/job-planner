@@ -54,6 +54,10 @@ export async function POST(request: Request) {
   if (!inviteCode) {
     return bad("초대 코드를 입력해 주세요.");
   }
+  // 무엇을 저장하는지 읽고 동의했는지 확인한다.
+  if (body.agreed !== true) {
+    return bad("개인정보 안내에 동의해야 가입할 수 있습니다.");
+  }
 
   const admin = createAdminClient();
 
@@ -111,6 +115,8 @@ export async function POST(request: Request) {
     user_id: created.user.id,
     username,
     display_name: displayName,
+    used_invite_code: inviteCode,
+    privacy_agreed_at: new Date().toISOString(),
   });
 
   if (profileError) {

@@ -2,7 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { KeyRound, Route, ShieldUser } from "lucide-react";
+import {
+  KeyRound,
+  MessageSquare,
+  Route,
+  Settings,
+  ShieldUser,
+  Ticket,
+} from "lucide-react";
 
 import { LogoutButton } from "@/components/logout-button";
 import { NAV_ITEMS, isActive } from "@/components/nav-items";
@@ -55,11 +62,25 @@ export function Sidebar({ displayName, username, isAdmin }: Props) {
           목표 로드맵
         </Link>
         {isAdmin ? (
-          <Link href="/admin/users" className={subLink}>
-            <ShieldUser className="size-4 shrink-0" aria-hidden />
-            사용자 관리
-          </Link>
+          <>
+            <Link href="/admin/users" className={subLink}>
+              <ShieldUser className="size-4 shrink-0" aria-hidden />
+              사용자 관리
+            </Link>
+            <Link href="/admin/invites" className={subLink}>
+              <Ticket className="size-4 shrink-0" aria-hidden />
+              초대 코드
+            </Link>
+            <Link href="/admin/feedback" className={subLink}>
+              <MessageSquare className="size-4 shrink-0" aria-hidden />
+              받은 의견
+            </Link>
+          </>
         ) : null}
+        <Link href="/settings" className={subLink}>
+          <Settings className="size-4 shrink-0" aria-hidden />
+          설정
+        </Link>
         <Link href="/settings/password" className={subLink}>
           <KeyRound className="size-4 shrink-0" aria-hidden />
           비밀번호 변경

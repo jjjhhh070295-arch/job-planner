@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
+import { PrivacyNotice } from "@/components/privacy-notice";
 import { btnPrimary, inputClass } from "@/components/ui/primitives";
 import {
   DISPLAY_NAME_RULE_TEXT,
@@ -17,6 +18,7 @@ export default function SignupPage() {
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [inviteCode, setInviteCode] = useState("");
+  const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -36,7 +38,13 @@ export default function SignupPage() {
     const response = await fetch("/api/auth/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, displayName, password, inviteCode }),
+      body: JSON.stringify({
+        username,
+        displayName,
+        password,
+        inviteCode,
+        agreed,
+      }),
     });
 
     if (!response.ok) {
@@ -66,8 +74,8 @@ export default function SignupPage() {
   }
 
   return (
-    <main className="flex flex-1 items-center justify-center p-6">
-      <div className="w-full max-w-sm">
+    <main className="flex flex-1 justify-center p-4 py-8 md:p-6">
+      <div className="w-full max-w-md">
         <h1 className="text-2xl font-bold">가입하기</h1>
         <p className="mt-1 text-sm text-ink-500">
           초대 코드가 있어야 가입할 수 있습니다.
@@ -143,6 +151,22 @@ export default function SignupPage() {
             </span>
           </label>
 
+          <div className="mt-2 flex flex-col gap-2">
+            <PrivacyNotice />
+            <label className="flex items-start gap-2.5 rounded-lg border border-line bg-surface p-3">
+              <input
+                type="checkbox"
+                checked={agreed}
+                onChange={(event) => setAgreed(event.target.checked)}
+                required
+                className="mt-0.5 size-5 shrink-0 accent-brand-600"
+              />
+              <span className="text-sm text-ink-700">
+                위 내용을 읽었고, 이대로 저장·처리되는 데 동의합니다.
+              </span>
+            </label>
+          </div>
+
           {error ? (
             <p className="rounded-md bg-danger-50 px-3 py-2 text-sm text-danger-600">
               {error}
@@ -151,7 +175,7 @@ export default function SignupPage() {
 
           <button
             type="submit"
-            disabled={pending}
+            disabled={pending || !agreed}
             className={btnPrimary + " mt-2 w-full"}
           >
             {pending ? "가입 중..." : "가입하기"}
