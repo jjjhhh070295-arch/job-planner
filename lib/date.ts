@@ -20,6 +20,19 @@ export function toDateInput(iso: string | null | undefined): string {
   return seoulDateString(new Date(iso));
 }
 
+/** timestamptz 를 time 입력칸에 넣을 "HH:MM" 으로 (서울 기준) */
+export function toTimeInput(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: TIME_ZONE,
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(new Date(iso));
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+  return `${get("hour")}:${get("minute")}`;
+}
+
 /** 서울 기준 오늘 날짜 "YYYY-MM-DD" */
 export function todayInSeoul(): string {
   return seoulDateString(new Date());
