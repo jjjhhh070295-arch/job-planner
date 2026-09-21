@@ -8,6 +8,7 @@ import {
   MessagesSquare,
   Route,
   Settings,
+  Building2,
   BookOpenCheck,
   CalendarCheck,
   ShieldUser,
@@ -89,6 +90,10 @@ export function Sidebar({ displayName, username, isAdmin }: Props) {
             <Link href="/admin/exams" className={subLink}>
               <CalendarCheck className="size-4 shrink-0" aria-hidden />
               시험 일정
+            </Link>
+            <Link href="/admin/dart" className={subLink}>
+              <Building2 className="size-4 shrink-0" aria-hidden />
+              DART 기업 목록
             </Link>
           </>
         ) : null}

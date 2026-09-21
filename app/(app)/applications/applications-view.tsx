@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { LayoutGrid, Table2 } from "lucide-react";
 
@@ -199,7 +200,12 @@ export function ApplicationsView({
           >
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-1.5">
-                <p className="min-w-0 truncate font-medium">{item.company}</p>
+                <Link
+                  href={`/applications/${item.id}`}
+                  className="min-w-0 truncate font-medium hover:underline"
+                >
+                  {item.company}
+                </Link>
                 <Tag tone={statusTone(item.status)}>{item.status}</Tag>
                 <DeadlineTag item={item} />
               </div>
@@ -276,7 +282,14 @@ export function ApplicationsView({
                 />
               }
             >
-              <td className="px-3 py-2.5 font-medium">{item.company}</td>
+              <td className="px-3 py-2.5 font-medium">
+                <Link
+                  href={`/applications/${item.id}`}
+                  className="hover:underline"
+                >
+                  {item.company}
+                </Link>
+              </td>
               <td className="px-3 py-2.5 text-ink-500">{item.role ?? "—"}</td>
               <td className="px-3 py-2.5 text-ink-500">{item.season ?? "—"}</td>
               <td className="px-3 py-2.5">
