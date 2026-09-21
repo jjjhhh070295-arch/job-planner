@@ -246,3 +246,136 @@ export async function updateExperience(
   revalidatePath("/profile");
   return { ok: true, message: "수정했습니다." };
 }
+
+/* ============================================================
+   이력서 일괄 입력 (CLAUDE.md 7장).
+   이력서 원문은 AI API 로 보내지 않는다. 사용자가 자기 AI 채팅에서 받은
+   JSON 을 붙여넣으면 여기서 검사해 저장한다.
+   ============================================================ */
+
+const DEGREES = ["학사", "전문학사", "석사", "박사", "고졸"];
+
+function asText(raw: unknown, max: number): string | null {
+  if (typeof raw !== "string") return null;
+  const trimmed = raw.trim();
+  if (!trimmed || trimmed.toLowerCase() === "null") return null;
+  return trimmed.slice(0, max);
+}
+
+function asDate(raw: unknown): string | null {
+  const text = asText(raw, 10);
+  return text && /^\d{4}-\d{2}-\d{2}$/.test(text) ? text : null;
+}
+
+export async function importProfileJson(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const { supabase, userId } = await requireUser();
+
+  const raw = String(formData.get("json") ?? "").trim();
+  if (!raw) return { ok: false, message: "붙여넣은 내용이 없습니다." };
+
+  // AI 가 앞뒤에 코드블록 표시를 붙여 주는 일이 흔하다.
+  const cleaned = raw
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/```\s*$/i, "")
+    .trim();
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(cleaned);
+  } catch {
+    return {
+      ok: false,
+      message:
+        "JSON 형식이 아닙니다. AI 답변에서 { 로 시작해 } 로 끝나는 부분만 붙여넣어 주세요.",
+    };
+  }
+
+  const data = parsed as {
+    education?: unknown[];
+    experiences?: unknown[];
+  };
+
+  const educationRows = (Array.isArray(data.education) ? data.education : [])
+    .map((item) => {
+      const row = item as Record<string, unknown>;
+      const school = asText(row.school, 100);
+      if (!school) return null;
+      const degree = asText(row.degree, 20);
+      return {
+        user_id: userId,
+        school,
+        major: asText(row.major, 100),
+        degree: degree && DEGREES.includes(degree) ? degree : null,
+        start_date: asDate(row.start_date),
+        end_date: asDate(row.end_date),
+        gpa: asText(row.gpa, 30),
+        key_courses: asText(row.key_courses, 500),
+      };
+    })
+    .filter((row): row is NonNullable<typeof row> => row !== null)
+    .slice(0, 20);
+
+  const experienceRows = (Array.isArray(data.experiences) ? data.experiences : [])
+    .map((item) => {
+      const row = item as Record<string, unknown>;
+      const title = asText(row.title, 100);
+      if (!title) return null;
+      const tags = Array.isArray(row.tags)
+        ? row.tags
+            .map((tag) => asText(tag, 30))
+            .filter((tag): tag is string => tag !== null)
+            .slice(0, 10)
+        : [];
+      return {
+        user_id: userId,
+        title,
+        org: asText(row.org, 100),
+        period_start: asDate(row.period_start),
+        period_end: asDate(row.period_end),
+        role: asText(row.role, 100),
+        situation: asText(row.situation, 2000),
+        action: asText(row.action, 2000),
+        result: asText(row.result, 2000),
+        tags,
+      };
+    })
+    .filter((row): row is NonNullable<typeof row> => row !== null)
+    .slice(0, 50);
+
+  if (educationRows.length === 0 && experienceRows.length === 0) {
+    return {
+      ok: false,
+      message: "넣을 학력이나 경험을 찾지 못했습니다. JSON 형식을 확인해 주세요.",
+    };
+  }
+
+  if (educationRows.length > 0) {
+    const { error } = await supabase.from("education").insert(educationRows);
+    if (error) {
+      console.error("[profile] 학력 일괄 입력 실패", error.message);
+      return { ok: false, message: "학력을 넣지 못했습니다." };
+    }
+  }
+
+  if (experienceRows.length > 0) {
+    const { error } = await supabase
+      .from("experiences")
+      .insert(experienceRows);
+    if (error) {
+      console.error("[profile] 경험 일괄 입력 실패", error.message);
+      return {
+        ok: false,
+        message: "경험을 넣지 못했습니다. 학력은 저장됐을 수 있습니다.",
+      };
+    }
+  }
+
+  revalidatePath("/profile");
+  return {
+    ok: true,
+    message: `학력 ${educationRows.length}건, 경험 ${experienceRows.length}건을 넣었습니다. 내용을 확인하고 고쳐 주세요.`,
+  };
+}

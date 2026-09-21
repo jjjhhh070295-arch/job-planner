@@ -140,3 +140,43 @@ export async function updateEssay(
   revalidatePath("/library");
   return { ok: true, message: "수정했습니다." };
 }
+
+/**
+ * AI 채팅에서 받은 초안을 저장한다.
+ * 항상 초안(is_final=false)으로만 들어가고, 쓴 경험이 출처로 남는다 (CLAUDE.md 7장).
+ */
+export async function saveEssayDraft(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const { supabase } = await requireUser();
+
+  const id = String(formData.get("id") ?? "");
+  if (!id) return { ok: false, message: "잘못된 요청입니다." };
+
+  const draft = value(formData, "draft");
+  if (!draft) return { ok: false, message: "붙여넣은 내용이 없습니다." };
+
+  const sources = String(formData.get("source_experience_ids") ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  const { error } = await supabase
+    .from("essays")
+    .update({
+      answer: draft,
+      is_final: false,
+      is_ai_draft: true,
+      source_experience_ids: sources,
+    })
+    .eq("id", id);
+
+  if (error) {
+    console.error("[library] 초안 저장 실패", error.message);
+    return { ok: false, message: "저장하지 못했습니다." };
+  }
+
+  revalidatePath("/library");
+  return { ok: true, message: "초안으로 저장했습니다." };
+}

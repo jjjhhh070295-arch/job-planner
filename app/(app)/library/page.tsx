@@ -1,12 +1,23 @@
 import Link from "next/link";
 
-import { addEssay, removeEssay, toggleEssayFinal, updateEssay } from "./actions";
+import {
+  addEssay,
+  removeEssay,
+  saveEssayDraft,
+  toggleEssayFinal,
+  updateEssay,
+} from "./actions";
 import { DeleteRowButton } from "@/components/delete-row-button";
 import { EditableRow } from "@/components/editable-row";
 import { EssayFinalToggle } from "@/components/essay-final-toggle";
+import {
+  PromptBuilder,
+  type ExperienceOption,
+} from "@/components/prompt-builder";
 import { PageShell } from "@/components/page-shell";
 import { RecordForm, type Field } from "@/components/record-form";
 import { Tag, btnPrimary, inputClass } from "@/components/ui/primitives";
+import { formatPeriod } from "@/lib/date";
 import { ESSAY_CATEGORIES } from "@/lib/essay-category";
 import { createClient } from "@/lib/supabase/server";
 
@@ -18,6 +29,8 @@ type Essay = {
   category: string | null;
   answer: string | null;
   is_final: boolean;
+  is_ai_draft: boolean;
+  source_experience_ids: string[];
 };
 
 type InterviewQuestion = {
@@ -113,6 +126,45 @@ export default async function LibraryPage({
     kind === "essay" ? Promise.resolve({ data: [] }) : interviewQuery,
     supabase.from("interviews").select("id, stage, application_id"),
   ]);
+
+  // 프롬프트에 넣을 재료. 경험과 최종본 자소서는 AI 로 보내지 않고 화면에서 조립만 한다.
+  const [experienceResult, referenceResult] = await Promise.all([
+    supabase
+      .from("experiences")
+      .select("*")
+      .order("period_start", { ascending: false }),
+    supabase
+      .from("essays")
+      .select("id, question, answer")
+      .eq("is_final", true)
+      .not("answer", "is", null)
+      .limit(20),
+  ]);
+
+  const experienceOptions: ExperienceOption[] = (experienceResult.data ?? []).map(
+    (row) => {
+      const r = row as Record<string, unknown>;
+      return {
+        id: r.id as string,
+        title: r.title as string,
+        org: (r.org as string | null) ?? null,
+        role: (r.role as string | null) ?? null,
+        period: formatPeriod(
+          r.period_start as string | null,
+          r.period_end as string | null,
+        ),
+        situation: (r.situation as string | null) ?? null,
+        action: (r.action as string | null) ?? null,
+        result: (r.result as string | null) ?? null,
+        tags: (r.tags as string[] | null) ?? [],
+      };
+    },
+  );
+
+  const referenceOptions = (referenceResult.data ?? []).map((row) => {
+    const r = row as { id: string; question: string; answer: string };
+    return { id: r.id, question: r.question, answer: r.answer };
+  });
 
   const essays = (essayResult.data ?? []) as Essay[];
   let interviewQuestions = (interviewResult.data ?? []) as InterviewQuestion[];
@@ -339,13 +391,46 @@ export default async function LibraryPage({
                         </span>
                       </p>
 
-                      <div className="mt-2">
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
                         <EssayFinalToggle
                           action={toggleEssayFinal}
                           id={essay.id}
                           isFinal={essay.is_final}
                         />
+                        {essay.is_ai_draft && !essay.is_final ? (
+                          <Tag tone="muted">AI 초안</Tag>
+                        ) : null}
+                        <PromptBuilder
+                          essayId={essay.id}
+                          question={essay.question}
+                          charLimit={essay.char_limit}
+                          company={
+                            essay.application_id
+                              ? (companyById.get(essay.application_id) ?? null)
+                              : null
+                          }
+                          role={null}
+                          experiences={experienceOptions}
+                          references={referenceOptions.filter(
+                            (r) => r.id !== essay.id,
+                          )}
+                          saveDraft={saveEssayDraft}
+                        />
                       </div>
+
+                      {essay.source_experience_ids.length > 0 ? (
+                        <p className="mt-2 text-xs text-ink-400">
+                          출처로 쓴 경험 {essay.source_experience_ids.length}개
+                          {": "}
+                          {essay.source_experience_ids
+                            .map(
+                              (id) =>
+                                experienceOptions.find((e) => e.id === id)
+                                  ?.title ?? "삭제된 경험",
+                            )
+                            .join(", ")}
+                        </p>
+                      ) : null}
 
                       {essay.answer ? (
                         <details className="mt-3">

@@ -2,12 +2,14 @@ import {
   addEducation,
   addExperience,
   addSpec,
+  importProfileJson,
   removeProfileRow,
   updateEducation,
   updateExperience,
   updateSpec,
 } from "./actions";
 import { DeleteRowButton } from "@/components/delete-row-button";
+import { ProfileImport } from "@/components/profile-import";
 import { EditableRow } from "@/components/editable-row";
 import { PageShell } from "@/components/page-shell";
 import { RecordForm, type Field } from "@/components/record-form";
@@ -206,6 +208,19 @@ export default async function ProfilePage() {
       title="프로필"
       description="자소서를 쓸 때 꺼내 쓸 재료를 모아 둡니다."
     >
+      {education.length === 0 && experiences.length === 0 ? (
+        <div className="rounded-xl border border-brand-200 bg-brand-50/50 p-4">
+          <p className="text-sm font-bold text-brand-700">
+            기존 이력서가 있으신가요?
+          </p>
+          <p className="mt-1 mb-3 text-sm text-brand-700">
+            한 줄씩 옮겨 적는 대신, 이력서를 통째로 넣어 학력과 경험을 한 번에
+            채울 수 있습니다.
+          </p>
+          <ProfileImport action={importProfileJson} />
+        </div>
+      ) : null}
+
       {/* ---------------- 학력 ---------------- */}
       <section className="flex flex-col gap-3">
         <SectionTitle title="학력" count={education.length} />
@@ -436,6 +451,10 @@ export default async function ProfilePage() {
           openLabel="경험 추가"
         />
       </section>
+
+      {education.length > 0 || experiences.length > 0 ? (
+        <ProfileImport action={importProfileJson} />
+      ) : null}
     </PageShell>
   );
 }
