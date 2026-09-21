@@ -3,14 +3,17 @@ import Link from "next/link";
 import {
   addApplication,
   removeApplication,
+  updateApplication,
   updateApplicationStatus,
 } from "./actions";
 import { STATUSES, isClosed } from "@/lib/application-status";
 import { DeleteRowButton } from "@/components/delete-row-button";
+import { EditableRow } from "@/components/editable-row";
+import { EditableTableRow } from "@/components/editable-table-row";
 import { PageShell } from "@/components/page-shell";
 import { RecordForm, type Field } from "@/components/record-form";
 import { StatusSelect } from "@/components/status-select";
-import { daysUntilTimestamp, formatDeadline } from "@/lib/date";
+import { daysUntilTimestamp, formatDeadline, toDateInput } from "@/lib/date";
 import { createClient } from "@/lib/supabase/server";
 
 type Application = {
@@ -81,22 +84,43 @@ function DeadlineText({
   );
 }
 
+/** 수정 폼에 미리 채울 값. 마감은 date 입력칸 형식으로 바꾼다. */
+function editDefaults(item: Application) {
+  return {
+    company: item.company,
+    role: item.role,
+    season: item.season,
+    status: item.status,
+    deadline: toDateInput(item.deadline),
+    posting_url: item.posting_url,
+    memo: item.memo,
+  };
+}
+
 function Card({ item }: { item: Application }) {
   return (
-    <li className="rounded-lg border border-gray-200 bg-white p-3">
-      <div className="flex items-start justify-between gap-2">
+    <li>
+      <EditableRow
+        action={updateApplication}
+        fields={FIELDS}
+        defaults={editDefaults(item)}
+        id={item.id}
+        title={item.company}
+        className="rounded-lg border border-gray-200 bg-white p-3"
+        deleteSlot={
+          <DeleteRowButton
+            action={removeApplication}
+            id={item.id}
+            label={item.company}
+          />
+        }
+      >
         <div className="min-w-0">
           <p className="truncate font-medium">{item.company}</p>
           {item.role ? (
             <p className="truncate text-sm text-gray-500">{item.role}</p>
           ) : null}
         </div>
-        <DeleteRowButton
-          action={removeApplication}
-          id={item.id}
-          label={item.company}
-        />
-      </div>
 
       {item.season ? (
         <p className="mt-1 text-xs text-gray-400">{item.season}</p>
@@ -130,6 +154,7 @@ function Card({ item }: { item: Application }) {
           </a>
         ) : null}
       </div>
+      </EditableRow>
     </li>
   );
 }
@@ -198,7 +223,22 @@ export default async function ApplicationsPage({
             </thead>
             <tbody className="divide-y divide-gray-200">
               {items.map((item) => (
-                <tr key={item.id}>
+                <EditableTableRow
+                  key={item.id}
+                  action={updateApplication}
+                  fields={FIELDS}
+                  defaults={editDefaults(item)}
+                  id={item.id}
+                  title={item.company}
+                  columnCount={6}
+                  deleteSlot={
+                    <DeleteRowButton
+                      action={removeApplication}
+                      id={item.id}
+                      label={item.company}
+                    />
+                  }
+                >
                   <td className="px-3 py-2 font-medium">{item.company}</td>
                   <td className="px-3 py-2 text-gray-600">{item.role ?? "-"}</td>
                   <td className="px-3 py-2 text-gray-600">
@@ -218,14 +258,7 @@ export default async function ApplicationsPage({
                       statuses={STATUSES}
                     />
                   </td>
-                  <td className="px-3 py-2 text-right">
-                    <DeleteRowButton
-                      action={removeApplication}
-                      id={item.id}
-                      label={item.company}
-                    />
-                  </td>
-                </tr>
+                </EditableTableRow>
               ))}
             </tbody>
           </table>

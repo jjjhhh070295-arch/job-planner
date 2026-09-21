@@ -8,8 +8,12 @@ import {
   removeTask,
   toggleTask,
   toggleTaskToday,
+  updateGoal,
+  updateMilestone,
+  updateTask,
 } from "./actions";
 import { DeleteRowButton } from "@/components/delete-row-button";
+import { EditableRow } from "@/components/editable-row";
 import { PageShell } from "@/components/page-shell";
 import { RecordForm, type Field } from "@/components/record-form";
 import {
@@ -43,15 +47,45 @@ function ProgressBar({ percent }: { percent: number }) {
 function TaskRow({
   task,
   milestoneTitle,
+  fields,
 }: {
   task: Task;
   milestoneTitle?: string;
+  fields: Field[];
 }) {
   const overdue =
     !task.done && task.due_date !== null && task.due_date < todayInSeoul();
 
   return (
-    <li className="flex items-center gap-1 rounded-lg border border-gray-200 px-2 py-1.5">
+    <li>
+      <EditableRow
+        action={updateTask}
+        fields={fields}
+        defaults={{
+          title: task.title,
+          milestone_id: task.milestone_id,
+          due_date: task.due_date,
+          when: task.is_today ? "오늘" : "나중에",
+        }}
+        id={task.id}
+        title={task.title}
+        className="rounded-lg border border-gray-200 px-2 py-1.5"
+        deleteSlot={
+          <>
+            <TodayToggle
+              action={toggleTaskToday}
+              id={task.id}
+              isToday={task.is_today}
+            />
+            <DeleteRowButton
+              action={removeTask}
+              id={task.id}
+              label={task.title}
+            />
+          </>
+        }
+      >
+      <div className="flex items-center gap-1">
       <TaskCheckbox
         action={toggleTask}
         id={task.id}
@@ -83,12 +117,8 @@ function TaskRow({
       {overdue ? (
         <span className="shrink-0 text-xs font-medium text-red-600">지남</span>
       ) : null}
-      <TodayToggle
-        action={toggleTaskToday}
-        id={task.id}
-        isToday={task.is_today}
-      />
-      <DeleteRowButton action={removeTask} id={task.id} label={task.title} />
+      </div>
+      </EditableRow>
     </li>
   );
 }
@@ -220,11 +250,21 @@ export default async function RoadmapPage() {
           {goals.map((goal) => {
             const own = milestones.filter((m) => m.goal_id === goal.id);
             return (
-              <li
-                key={goal.id}
-                className="rounded-lg border border-gray-200 p-4"
-              >
-                <div className="flex items-start justify-between gap-3">
+              <li key={goal.id}>
+                <EditableRow
+                  action={updateGoal}
+                  fields={goalFields}
+                  defaults={{ title: goal.title, due_date: goal.due_date }}
+                  id={goal.id}
+                  title={goal.title}
+                  deleteSlot={
+                    <DeleteRowButton
+                      action={removeGoal}
+                      id={goal.id}
+                      label={goal.title}
+                    />
+                  }
+                >
                   <div className="min-w-0">
                     <p className="font-medium">{goal.title}</p>
                     {goal.due_date ? (
@@ -233,12 +273,6 @@ export default async function RoadmapPage() {
                       </p>
                     ) : null}
                   </div>
-                  <DeleteRowButton
-                    action={removeGoal}
-                    id={goal.id}
-                    label={goal.title}
-                  />
-                </div>
 
                 {own.length === 0 ? (
                   <p className="mt-3 text-sm text-gray-400">
@@ -254,43 +288,61 @@ export default async function RoadmapPage() {
                       );
                       return (
                         <li key={milestone.id}>
-                          <div className="flex items-center justify-between gap-2">
-                            <p className="min-w-0 truncate text-sm font-medium">
-                              {milestone.month ? (
-                                <span className="text-gray-400">
-                                  {milestone.month}{" "}
-                                </span>
-                              ) : null}
-                              {milestone.title}
-                            </p>
-                            <div className="flex shrink-0 items-center gap-2">
-                              <span className="text-xs text-gray-500">
+                          <EditableRow
+                            action={updateMilestone}
+                            fields={milestoneFields}
+                            defaults={{
+                              title: milestone.title,
+                              goal_id: milestone.goal_id,
+                              month: milestone.month,
+                              target_value: String(milestone.target_value),
+                              auto_source: milestone.auto_source,
+                            }}
+                            id={milestone.id}
+                            title={milestone.title}
+                            className=""
+                            deleteSlot={
+                              <>
+                                {milestone.auto_source === "manual" ? (
+                                  <MilestoneBump
+                                    action={bumpMilestone}
+                                    id={milestone.id}
+                                  />
+                                ) : null}
+                                <DeleteRowButton
+                                  action={removeMilestone}
+                                  id={milestone.id}
+                                  label={milestone.title}
+                                />
+                              </>
+                            }
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <p className="min-w-0 truncate text-sm font-medium">
+                                {milestone.month ? (
+                                  <span className="text-gray-400">
+                                    {milestone.month}{" "}
+                                  </span>
+                                ) : null}
+                                {milestone.title}
+                              </p>
+                              <span className="shrink-0 text-xs text-gray-500">
                                 {current} / {milestone.target_value}
                               </span>
-                              {milestone.auto_source === "manual" ? (
-                                <MilestoneBump
-                                  action={bumpMilestone}
-                                  id={milestone.id}
-                                />
-                              ) : null}
-                              <DeleteRowButton
-                                action={removeMilestone}
-                                id={milestone.id}
-                                label={milestone.title}
-                              />
                             </div>
-                          </div>
-                          <div className="mt-1.5">
-                            <ProgressBar percent={percent} />
-                          </div>
-                          <p className="mt-1 text-xs text-gray-400">
-                            {sourceLabel(milestone.auto_source)} · {percent}%
-                          </p>
+                            <div className="mt-1.5">
+                              <ProgressBar percent={percent} />
+                            </div>
+                            <p className="mt-1 text-xs text-gray-400">
+                              {sourceLabel(milestone.auto_source)} · {percent}%
+                            </p>
+                          </EditableRow>
                         </li>
                       );
                     })}
                   </ul>
                 )}
+                </EditableRow>
               </li>
             );
           })}
@@ -310,30 +362,47 @@ export default async function RoadmapPage() {
                   const percent = percentOf(current, milestone.target_value);
                   return (
                     <li key={milestone.id}>
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="min-w-0 truncate text-sm font-medium">
-                          {milestone.title}
-                        </p>
-                        <div className="flex shrink-0 items-center gap-2">
-                          <span className="text-xs text-gray-500">
+                      <EditableRow
+                        action={updateMilestone}
+                        fields={milestoneFields}
+                        defaults={{
+                          title: milestone.title,
+                          goal_id: milestone.goal_id,
+                          month: milestone.month,
+                          target_value: String(milestone.target_value),
+                          auto_source: milestone.auto_source,
+                        }}
+                        id={milestone.id}
+                        title={milestone.title}
+                        className=""
+                        deleteSlot={
+                          <>
+                            {milestone.auto_source === "manual" ? (
+                              <MilestoneBump
+                                action={bumpMilestone}
+                                id={milestone.id}
+                              />
+                            ) : null}
+                            <DeleteRowButton
+                              action={removeMilestone}
+                              id={milestone.id}
+                              label={milestone.title}
+                            />
+                          </>
+                        }
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="min-w-0 truncate text-sm font-medium">
+                            {milestone.title}
+                          </p>
+                          <span className="shrink-0 text-xs text-gray-500">
                             {current} / {milestone.target_value}
                           </span>
-                          {milestone.auto_source === "manual" ? (
-                            <MilestoneBump
-                              action={bumpMilestone}
-                              id={milestone.id}
-                            />
-                          ) : null}
-                          <DeleteRowButton
-                            action={removeMilestone}
-                            id={milestone.id}
-                            label={milestone.title}
-                          />
                         </div>
-                      </div>
-                      <div className="mt-1.5">
-                        <ProgressBar percent={percent} />
-                      </div>
+                        <div className="mt-1.5">
+                          <ProgressBar percent={percent} />
+                        </div>
+                      </EditableRow>
                     </li>
                   );
                 })}
@@ -373,6 +442,7 @@ export default async function RoadmapPage() {
                 <TaskRow
                   key={task.id}
                   task={task}
+                  fields={taskFields}
                   milestoneTitle={
                     task.milestone_id
                       ? milestoneTitleById.get(task.milestone_id)
@@ -396,6 +466,7 @@ export default async function RoadmapPage() {
                 <TaskRow
                   key={task.id}
                   task={task}
+                  fields={taskFields}
                   milestoneTitle={
                     task.milestone_id
                       ? milestoneTitleById.get(task.milestone_id)
@@ -417,6 +488,7 @@ export default async function RoadmapPage() {
                 <TaskRow
                   key={task.id}
                   task={task}
+                  fields={taskFields}
                   milestoneTitle={
                     task.milestone_id
                       ? milestoneTitleById.get(task.milestone_id)
@@ -435,7 +507,7 @@ export default async function RoadmapPage() {
             </summary>
             <ul className="mt-2 flex flex-col gap-1.5">
               {doneTasks.map((task) => (
-                <TaskRow key={task.id} task={task} />
+                <TaskRow key={task.id} task={task} fields={taskFields} />
               ))}
             </ul>
           </details>

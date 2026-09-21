@@ -224,3 +224,109 @@ export async function removeTask(formData: FormData): Promise<void> {
 
   revalidateAll();
 }
+
+// ---------------- 수정 ----------------
+
+export async function updateGoal(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const { supabase } = await requireUser();
+
+  const id = String(formData.get("id") ?? "");
+  if (!id) return { ok: false, message: "잘못된 요청입니다." };
+
+  const title = value(formData, "title");
+  if (!title) return { ok: false, message: "목표를 입력해 주세요." };
+
+  const { error } = await supabase
+    .from("goals")
+    .update({ title, due_date: value(formData, "due_date") })
+    .eq("id", id);
+
+  if (error) {
+    console.error("[roadmap] 목표 수정 실패", error.message);
+    return { ok: false, message: "저장하지 못했습니다." };
+  }
+
+  revalidateAll();
+  return { ok: true, message: "수정했습니다." };
+}
+
+export async function updateMilestone(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const { supabase } = await requireUser();
+
+  const id = String(formData.get("id") ?? "");
+  if (!id) return { ok: false, message: "잘못된 요청입니다." };
+
+  const title = value(formData, "title");
+  if (!title) return { ok: false, message: "마일스톤 이름을 입력해 주세요." };
+
+  const source = (value(formData, "auto_source") ?? "manual") as AutoSource;
+  if (!AUTO_SOURCES.some((item) => item.value === source)) {
+    return { ok: false, message: "진행률 기준이 올바르지 않습니다." };
+  }
+
+  const targetRaw = value(formData, "target_value");
+  const target = targetRaw ? Number.parseInt(targetRaw, 10) : 1;
+  if (Number.isNaN(target) || target < 1) {
+    return { ok: false, message: "목표 수치는 1 이상의 숫자여야 합니다." };
+  }
+
+  const { error } = await supabase
+    .from("milestones")
+    .update({
+      goal_id: value(formData, "goal_id"),
+      title,
+      month: value(formData, "month"),
+      target_value: target,
+      auto_source: source,
+    })
+    .eq("id", id);
+
+  if (error) {
+    console.error("[roadmap] 마일스톤 수정 실패", error.message);
+    return { ok: false, message: "저장하지 못했습니다. 입력값을 확인해 주세요." };
+  }
+
+  revalidateAll();
+  return { ok: true, message: "수정했습니다." };
+}
+
+export async function updateTask(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const { supabase } = await requireUser();
+
+  const id = String(formData.get("id") ?? "");
+  if (!id) return { ok: false, message: "잘못된 요청입니다." };
+
+  const title = value(formData, "title");
+  if (!title) return { ok: false, message: "할 일을 입력해 주세요." };
+
+  const dueDate = value(formData, "due_date");
+
+  const { error } = await supabase
+    .from("tasks")
+    .update({
+      milestone_id: value(formData, "milestone_id"),
+      title,
+      due_date: dueDate,
+      // 마감을 옮기면 주간 묶음도 따라가야 한다.
+      week_of: mondayOf(dueDate ?? todayInSeoul()),
+      is_today: value(formData, "when") === "오늘",
+    })
+    .eq("id", id);
+
+  if (error) {
+    console.error("[roadmap] 할 일 수정 실패", error.message);
+    return { ok: false, message: "저장하지 못했습니다." };
+  }
+
+  revalidateAll();
+  return { ok: true, message: "수정했습니다." };
+}

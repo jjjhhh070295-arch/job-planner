@@ -145,3 +145,101 @@ export async function removeProfileRow(formData: FormData): Promise<void> {
 
   revalidatePath("/profile");
 }
+
+// ---------------- 수정 ----------------
+
+export async function updateEducation(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const { supabase } = await requireUser();
+
+  const id = String(formData.get("id") ?? "");
+  if (!id) return { ok: false, message: "잘못된 요청입니다." };
+
+  const school = value(formData, "school");
+  if (!school) return { ok: false, message: "학교 이름을 입력해 주세요." };
+
+  // RLS 가 본인 행만 고치도록 막아 준다.
+  const { error } = await supabase
+    .from("education")
+    .update({
+      school,
+      major: value(formData, "major"),
+      degree: value(formData, "degree"),
+      start_date: value(formData, "start_date"),
+      end_date: value(formData, "end_date"),
+      gpa: value(formData, "gpa"),
+      key_courses: value(formData, "key_courses"),
+    })
+    .eq("id", id);
+
+  if (error) return failure(error);
+
+  revalidatePath("/profile");
+  return { ok: true, message: "수정했습니다." };
+}
+
+export async function updateSpec(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const { supabase } = await requireUser();
+
+  const id = String(formData.get("id") ?? "");
+  if (!id) return { ok: false, message: "잘못된 요청입니다." };
+
+  const name = value(formData, "name");
+  if (!name) return { ok: false, message: "이름을 입력해 주세요." };
+
+  const { error } = await supabase
+    .from("user_specs")
+    .update({
+      name,
+      category: value(formData, "category") ?? "자격증",
+      status: value(formData, "status") ?? "보유",
+      score_or_grade: value(formData, "score_or_grade"),
+      acquired_date: value(formData, "acquired_date"),
+      expiry_date: value(formData, "expiry_date"),
+    })
+    .eq("id", id);
+
+  if (error) return failure(error);
+
+  revalidatePath("/profile");
+  revalidatePath("/");
+  return { ok: true, message: "수정했습니다." };
+}
+
+export async function updateExperience(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const { supabase } = await requireUser();
+
+  const id = String(formData.get("id") ?? "");
+  if (!id) return { ok: false, message: "잘못된 요청입니다." };
+
+  const title = value(formData, "title");
+  if (!title) return { ok: false, message: "제목을 입력해 주세요." };
+
+  const { error } = await supabase
+    .from("experiences")
+    .update({
+      title,
+      org: value(formData, "org"),
+      period_start: value(formData, "period_start"),
+      period_end: value(formData, "period_end"),
+      role: value(formData, "role"),
+      situation: value(formData, "situation"),
+      action: value(formData, "action"),
+      result: value(formData, "result"),
+      tags: tagList(formData, "tags"),
+    })
+    .eq("id", id);
+
+  if (error) return failure(error);
+
+  revalidatePath("/profile");
+  return { ok: true, message: "수정했습니다." };
+}

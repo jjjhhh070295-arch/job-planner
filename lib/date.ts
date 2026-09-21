@@ -14,6 +14,12 @@ function seoulDateString(date: Date): string {
   }).format(date);
 }
 
+/** timestamptz 를 date 입력칸에 넣을 "YYYY-MM-DD" 로 (서울 기준) */
+export function toDateInput(iso: string | null | undefined): string {
+  if (!iso) return "";
+  return seoulDateString(new Date(iso));
+}
+
 /** 서울 기준 오늘 날짜 "YYYY-MM-DD" */
 export function todayInSeoul(): string {
   return seoulDateString(new Date());

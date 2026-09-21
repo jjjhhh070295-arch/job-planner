@@ -3,8 +3,12 @@ import {
   addExperience,
   addSpec,
   removeProfileRow,
+  updateEducation,
+  updateExperience,
+  updateSpec,
 } from "./actions";
 import { DeleteRowButton } from "@/components/delete-row-button";
+import { EditableRow } from "@/components/editable-row";
 import { PageShell } from "@/components/page-shell";
 import { RecordForm, type Field } from "@/components/record-form";
 import { dDayLabel, formatPeriod, urgencyOf } from "@/lib/date";
@@ -174,11 +178,23 @@ export default async function ProfilePage() {
         ) : (
           <ul className="flex flex-col gap-2">
             {education.map((row) => (
-              <li
-                key={row.id}
-                className="flex items-start justify-between gap-3 rounded-lg border border-gray-200 p-4"
-              >
-                <div className="min-w-0">
+              <li key={row.id}>
+                <EditableRow
+                  action={updateEducation}
+                  fields={EDUCATION_FIELDS}
+                  defaults={row}
+                  id={row.id}
+                  title={row.school}
+                  deleteSlot={
+                    <DeleteRowButton
+                      action={removeProfileRow}
+                      table="education"
+                      id={row.id}
+                      label={row.school}
+                    />
+                  }
+                >
+                  <div className="min-w-0">
                   <p className="font-medium">
                     {row.school}
                     {row.major ? (
@@ -199,13 +215,8 @@ export default async function ProfilePage() {
                       {row.key_courses}
                     </p>
                   ) : null}
-                </div>
-                <DeleteRowButton
-                  action={removeProfileRow}
-                  table="education"
-                  id={row.id}
-                  label={row.school}
-                />
+                  </div>
+                </EditableRow>
               </li>
             ))}
           </ul>
@@ -229,10 +240,22 @@ export default async function ProfilePage() {
             {specs.map((row) => {
               const urgency = row.expiry_date ? urgencyOf(row.expiry_date) : null;
               return (
-                <li
-                  key={row.id}
-                  className="flex items-start justify-between gap-3 rounded-lg border border-gray-200 p-4"
-                >
+                <li key={row.id}>
+                  <EditableRow
+                    action={updateSpec}
+                    fields={SPEC_FIELDS}
+                    defaults={row}
+                    id={row.id}
+                    title={row.name}
+                    deleteSlot={
+                      <DeleteRowButton
+                        action={removeProfileRow}
+                        table="user_specs"
+                        id={row.id}
+                        label={row.name}
+                      />
+                    }
+                  >
                   <div className="min-w-0">
                     <p className="font-medium">
                       {row.name}
@@ -267,12 +290,7 @@ export default async function ProfilePage() {
                       ) : null}
                     </p>
                   </div>
-                  <DeleteRowButton
-                    action={removeProfileRow}
-                    table="user_specs"
-                    id={row.id}
-                    label={row.name}
-                  />
+                  </EditableRow>
                 </li>
               );
             })}
@@ -299,10 +317,22 @@ export default async function ProfilePage() {
         ) : (
           <ul className="flex flex-col gap-2">
             {experiences.map((row) => (
-              <li
-                key={row.id}
-                className="flex items-start justify-between gap-3 rounded-lg border border-gray-200 p-4"
-              >
+              <li key={row.id}>
+                <EditableRow
+                  action={updateExperience}
+                  fields={EXPERIENCE_FIELDS}
+                  defaults={{ ...row, tags: row.tags.join(", ") }}
+                  id={row.id}
+                  title={row.title}
+                  deleteSlot={
+                    <DeleteRowButton
+                      action={removeProfileRow}
+                      table="experiences"
+                      id={row.id}
+                      label={row.title}
+                    />
+                  }
+                >
                 <div className="min-w-0 flex-1">
                   <p className="font-medium">{row.title}</p>
                   <p className="mt-0.5 text-sm text-gray-500">
@@ -349,12 +379,7 @@ export default async function ProfilePage() {
                       ))}
                   </dl>
                 </div>
-                <DeleteRowButton
-                  action={removeProfileRow}
-                  table="experiences"
-                  id={row.id}
-                  label={row.title}
-                />
+                </EditableRow>
               </li>
             ))}
           </ul>

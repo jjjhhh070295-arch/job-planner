@@ -104,3 +104,49 @@ export async function removeApplication(formData: FormData): Promise<void> {
 
   revalidatePath("/applications");
 }
+
+export async function updateApplication(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const { supabase } = await requireUser();
+
+  const id = String(formData.get("id") ?? "");
+  if (!id) return { ok: false, message: "잘못된 요청입니다." };
+
+  const company = value(formData, "company");
+  if (!company) return { ok: false, message: "기업 이름을 입력해 주세요." };
+
+  const status = value(formData, "status") ?? "작성 중";
+  if (!STATUSES.includes(status as Status)) {
+    return { ok: false, message: "전형 단계가 올바르지 않습니다." };
+  }
+
+  const deadlineRaw = value(formData, "deadline");
+  const deadline =
+    deadlineRaw && /^\d{4}-\d{2}-\d{2}$/.test(deadlineRaw)
+      ? new Date(`${deadlineRaw}T23:59:00+09:00`).toISOString()
+      : null;
+
+  const { error } = await supabase
+    .from("applications")
+    .update({
+      company,
+      role: value(formData, "role"),
+      season: value(formData, "season"),
+      status,
+      deadline,
+      posting_url: value(formData, "posting_url"),
+      memo: value(formData, "memo"),
+    })
+    .eq("id", id);
+
+  if (error) {
+    console.error("[applications] 수정 실패", error.message);
+    return { ok: false, message: "저장하지 못했습니다. 입력값을 확인해 주세요." };
+  }
+
+  revalidatePath("/applications");
+  revalidatePath("/");
+  return { ok: true, message: "수정했습니다." };
+}

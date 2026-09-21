@@ -1,5 +1,6 @@
-import { addEssay, removeEssay, toggleEssayFinal } from "./actions";
+import { addEssay, removeEssay, toggleEssayFinal, updateEssay } from "./actions";
 import { DeleteRowButton } from "@/components/delete-row-button";
+import { EditableRow } from "@/components/editable-row";
 import { EssayFinalToggle } from "@/components/essay-final-toggle";
 import { PageShell } from "@/components/page-shell";
 import { RecordForm, type Field } from "@/components/record-form";
@@ -197,11 +198,29 @@ export default async function LibraryPage({
             const over = essay.char_limit ? length > essay.char_limit : false;
 
             return (
-              <li
-                key={essay.id}
-                className="rounded-lg border border-gray-200 p-4"
-              >
-                <div className="flex items-start justify-between gap-3">
+              <li key={essay.id}>
+                <EditableRow
+                  action={updateEssay}
+                  fields={fields}
+                  defaults={{
+                    application_id: essay.application_id,
+                    question: essay.question,
+                    char_limit:
+                      essay.char_limit === null ? "" : String(essay.char_limit),
+                    category: essay.category,
+                    answer: essay.answer,
+                    state: essay.is_final ? "최종" : "초안",
+                  }}
+                  id={essay.id}
+                  title={essay.question.slice(0, 20)}
+                  deleteSlot={
+                    <DeleteRowButton
+                      action={removeEssay}
+                      id={essay.id}
+                      label={essay.question.slice(0, 20)}
+                    />
+                  }
+                >
                   <div className="min-w-0">
                     <p className="font-medium whitespace-pre-wrap">
                       {essay.question}
@@ -228,36 +247,31 @@ export default async function LibraryPage({
                         {over ? " 초과" : ""}
                       </span>
                     </p>
-                  </div>
 
-                  <div className="flex shrink-0 items-center gap-1">
-                    <EssayFinalToggle
+                    <div className="mt-2">
+                      <EssayFinalToggle
                       action={toggleEssayFinal}
-                      id={essay.id}
-                      isFinal={essay.is_final}
-                    />
-                    <DeleteRowButton
-                      action={removeEssay}
-                      id={essay.id}
-                      label={essay.question.slice(0, 20)}
-                    />
-                  </div>
-                </div>
+                        id={essay.id}
+                        isFinal={essay.is_final}
+                      />
+                    </div>
 
-                {essay.answer ? (
-                  <details className="mt-3">
-                    <summary className="cursor-pointer text-sm font-medium text-blue-600">
-                      답변 보기
-                    </summary>
-                    <p className="mt-2 whitespace-pre-wrap text-sm text-gray-700">
-                      {essay.answer}
+                    {essay.answer ? (
+                    <details className="mt-3">
+                      <summary className="cursor-pointer text-sm font-medium text-blue-600">
+                        답변 보기
+                      </summary>
+                      <p className="mt-2 whitespace-pre-wrap text-sm text-gray-700">
+                        {essay.answer}
+                      </p>
+                    </details>
+                  ) : (
+                    <p className="mt-3 text-sm text-gray-400">
+                      아직 답변을 쓰지 않았습니다.
                     </p>
-                  </details>
-                ) : (
-                  <p className="mt-3 text-sm text-gray-400">
-                    아직 답변을 쓰지 않았습니다.
-                  </p>
-                )}
+                  )}
+                  </div>
+                </EditableRow>
               </li>
             );
           })}

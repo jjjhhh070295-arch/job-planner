@@ -96,3 +96,47 @@ export async function removeEssay(formData: FormData): Promise<void> {
 
   revalidatePath("/library");
 }
+
+export async function updateEssay(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const { supabase } = await requireUser();
+
+  const id = String(formData.get("id") ?? "");
+  if (!id) return { ok: false, message: "잘못된 요청입니다." };
+
+  const question = value(formData, "question");
+  if (!question) return { ok: false, message: "문항을 입력해 주세요." };
+
+  const category = value(formData, "category");
+  if (category && !ESSAY_CATEGORIES.includes(category as never)) {
+    return { ok: false, message: "문항 유형이 올바르지 않습니다." };
+  }
+
+  const charLimitRaw = value(formData, "char_limit");
+  const charLimit = charLimitRaw ? Number.parseInt(charLimitRaw, 10) : null;
+  if (charLimit !== null && (Number.isNaN(charLimit) || charLimit < 1)) {
+    return { ok: false, message: "글자 수 제한은 1 이상의 숫자여야 합니다." };
+  }
+
+  const { error } = await supabase
+    .from("essays")
+    .update({
+      application_id: value(formData, "application_id"),
+      question,
+      char_limit: charLimit,
+      category,
+      answer: value(formData, "answer"),
+      is_final: value(formData, "state") === "최종",
+    })
+    .eq("id", id);
+
+  if (error) {
+    console.error("[library] 수정 실패", error.message);
+    return { ok: false, message: "저장하지 못했습니다. 입력값을 확인해 주세요." };
+  }
+
+  revalidatePath("/library");
+  return { ok: true, message: "수정했습니다." };
+}

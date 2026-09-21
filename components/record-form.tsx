@@ -3,24 +3,10 @@
 import { useActionState, useEffect, useRef } from "react";
 import { ChevronDown } from "lucide-react";
 
+import { FormFields, type Field } from "@/components/form-fields";
 import type { FormState } from "@/lib/form-state";
 
-export type Field = {
-  name: string;
-  label: string;
-  type?: "text" | "date" | "textarea" | "select" | "number";
-  options?: string[];
-  /** options 대신 값과 표시 이름이 다를 때 쓴다 (예: 기업 선택) */
-  choices?: { value: string; label: string }[];
-  required?: boolean;
-  placeholder?: string;
-  hint?: string;
-  /** 두 칸을 모두 차지할지 */
-  wide?: boolean;
-};
-
-const inputClass =
-  "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500";
+export type { Field };
 
 /**
  * 접었다 펴는 추가 폼. 목록 위에 항상 펼쳐 두면 화면이 길어져서,
@@ -53,71 +39,12 @@ export function RecordForm({
         {openLabel}
       </summary>
 
-      <form ref={formRef} action={formAction} className="border-t border-gray-200 p-4">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {fields.map((field) => (
-            <label
-              key={field.name}
-              className={
-                "flex flex-col gap-1.5 " +
-                (field.wide || field.type === "textarea" ? "sm:col-span-2" : "")
-              }
-            >
-              <span className="text-xs font-medium text-gray-700">
-                {field.label}
-                {field.required ? (
-                  <span className="text-red-500"> *</span>
-                ) : null}
-              </span>
-
-              {field.type === "textarea" ? (
-                <textarea
-                  name={field.name}
-                  rows={3}
-                  required={field.required}
-                  placeholder={field.placeholder}
-                  className={inputClass}
-                />
-              ) : field.type === "select" ? (
-                <select
-                  name={field.name}
-                  defaultValue={field.choices?.[0]?.value ?? field.options?.[0]}
-                  className={inputClass}
-                >
-                  {field.choices
-                    ? field.choices.map((choice) => (
-                        <option key={choice.value} value={choice.value}>
-                          {choice.label}
-                        </option>
-                      ))
-                    : field.options?.map((option) => (
-                        <option key={option} value={option}>
-                          {option}
-                        </option>
-                      ))}
-                </select>
-              ) : (
-                <input
-                  type={
-                    field.type === "date"
-                      ? "date"
-                      : field.type === "number"
-                        ? "number"
-                        : "text"
-                  }
-                  name={field.name}
-                  required={field.required}
-                  placeholder={field.placeholder}
-                  className={inputClass}
-                />
-              )}
-
-              {field.hint ? (
-                <span className="text-xs text-gray-400">{field.hint}</span>
-              ) : null}
-            </label>
-          ))}
-        </div>
+      <form
+        ref={formRef}
+        action={formAction}
+        className="border-t border-gray-200 p-4"
+      >
+        <FormFields fields={fields} />
 
         {state && !state.ok ? (
           <p className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">
