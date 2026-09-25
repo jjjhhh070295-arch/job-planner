@@ -88,6 +88,7 @@ export async function addSpec(
     acquired_date: value(formData, "acquired_date"),
     expiry_date: value(formData, "expiry_date"),
     target_exam_id: value(formData, "target_exam_id"),
+    license_number: value(formData, "license_number"),
   });
 
   if (error) return failure(error);
@@ -203,6 +204,7 @@ export async function updateSpec(
       acquired_date: value(formData, "acquired_date"),
       expiry_date: value(formData, "expiry_date"),
       target_exam_id: value(formData, "target_exam_id"),
+      license_number: value(formData, "license_number"),
     })
     .eq("id", id);
 

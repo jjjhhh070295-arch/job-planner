@@ -9,6 +9,7 @@ import {
   updateSpec,
 } from "./actions";
 import { DeleteRowButton } from "@/components/delete-row-button";
+import { HiddenValue } from "@/components/hidden-value";
 import { ProfileImport } from "@/components/profile-import";
 import { EditableRow } from "@/components/editable-row";
 import { PageShell } from "@/components/page-shell";
@@ -36,6 +37,7 @@ type Spec = {
   acquired_date: string | null;
   expiry_date: string | null;
   target_exam_id: string | null;
+  license_number: string | null;
 };
 
 type Experience = {
@@ -100,6 +102,13 @@ function buildSpecFields(
       label: "유효기간",
       type: "date",
       hint: "어학 점수는 보통 2년. 대시보드에서 D-day로 알려 줍니다",
+    },
+    {
+      name: "license_number",
+      label: "자격번호 (등록번호)",
+      placeholder: "26-A1-000000",
+      hint: "선택 입력. 목록에서는 가려 두고 누를 때만 보입니다",
+      wide: true,
     },
     {
       name: "target_exam_id",
@@ -349,6 +358,13 @@ export default async function ProfilePage() {
                         </>
                       ) : null}
                     </p>
+
+                    {row.license_number ? (
+                      <HiddenValue
+                        label="자격번호"
+                        value={row.license_number}
+                      />
+                    ) : null}
                   </div>
                   </EditableRow>
                 </li>
