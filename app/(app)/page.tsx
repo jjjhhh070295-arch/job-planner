@@ -235,12 +235,13 @@ export default async function HomePage() {
         <Card>
           <CardHeader
             title="오늘의 일정"
-            count={todayItems.length}
+            badge={`${todayItems.length}건`}
             moreHref="/calendar"
           />
 
           {todayItems.length === 0 ? (
             <EmptyState
+              center
               text="오늘은 예정된 마감이나 일정이 없습니다."
               href="/calendar"
               cta="일정 추가하러 가기"

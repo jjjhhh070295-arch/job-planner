@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { buildMonthGrid, monthLabel } from "@/lib/calendar";
 
-const WEEKDAYS = ["월", "화", "수", "목", "금", "토", "일"];
+const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
 /**
  * 대시보드에 올리는 작은 달력.
@@ -41,7 +41,7 @@ export function MiniCalendar({
             key={label}
             className={
               "pb-1 text-center text-[11px] font-medium " +
-              (index === 6 ? "text-danger-600" : "text-ink-400")
+              (index === 0 ? "text-danger-600" : "text-ink-400")
             }
           >
             {label}
@@ -57,7 +57,7 @@ export function MiniCalendar({
             <div key={day.date} className="flex flex-col items-center gap-0.5">
               <span
                 className={
-                  "flex size-7 items-center justify-center rounded-full text-xs " +
+                  "flex size-7 items-center justify-center rounded-md text-xs " +
                   (isToday
                     ? "bg-brand-600 font-bold text-white"
                     : day.inMonth

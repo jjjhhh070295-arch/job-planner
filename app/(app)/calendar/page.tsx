@@ -32,7 +32,7 @@ type EventRow = {
   remind_before_min: number | null;
 };
 
-const WEEKDAY_LABELS = ["월", "화", "수", "목", "금", "토", "일"];
+const WEEKDAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
 
 const EVENT_FIELDS: Field[] = [
   {
@@ -245,11 +245,11 @@ export default async function CalendarPage({
             <div
               key={label}
               className={
-                "border-r border-b border-line bg-muted-100 px-2 py-1.5 text-center text-xs font-medium " +
-                (index === 5
-                  ? "text-brand-600"
+                "border-r border-b border-line bg-header px-2 py-1.5 text-center text-xs font-semibold " +
+                (index === 0
+                  ? "text-danger-600"
                   : index === 6
-                    ? "text-danger-600"
+                    ? "text-brand-600"
                     : "text-ink-500")
               }
             >
@@ -335,7 +335,7 @@ export default async function CalendarPage({
                   >
                     {Number(day.date.slice(5, 7))}월 {Number(day.date.slice(8))}일
                     {" ("}
-                    {WEEKDAY_LABELS[(day.weekday + 6) % 7]}
+                    {WEEKDAY_LABELS[day.weekday]}
                     {")"}
                     {isToday ? " · 오늘" : ""}
                   </p>

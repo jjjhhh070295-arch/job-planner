@@ -46,9 +46,9 @@ export function buildMonthGrid(month: string): Day[] {
   const [year, mon] = month.split("-").map(Number);
   const first = new Date(Date.UTC(year, mon - 1, 1));
 
-  // 월요일을 주의 시작으로 본다. getUTCDay: 0=일
-  const weekday = first.getUTCDay();
-  const offset = weekday === 0 ? -6 : 1 - weekday;
+  // 일요일을 주의 시작으로 본다. 한국 달력이 그렇게 생겼다. getUTCDay: 0=일
+  // (주간 할 일의 "그 주 월요일" 계산은 lib/date.ts 의 mondayOf 가 따로 맡는다)
+  const offset = -first.getUTCDay();
 
   const start = new Date(first);
   start.setUTCDate(start.getUTCDate() + offset);
