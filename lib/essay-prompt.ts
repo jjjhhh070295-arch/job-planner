@@ -22,6 +22,13 @@ export type PromptReference = {
   answer: string;
 };
 
+/** 공용 자소서 — 남이 쓴 글이다. 문체·구성만 참고하고 베끼지 않게 한다. */
+export type PromptSharedReference = {
+  company: string;
+  question: string;
+  answer: string;
+};
+
 export function buildEssayPrompt({
   question,
   charLimit,
@@ -29,6 +36,7 @@ export function buildEssayPrompt({
   role,
   experiences,
   references,
+  sharedReferences = [],
 }: {
   question: string;
   charLimit: number | null;
@@ -36,6 +44,7 @@ export function buildEssayPrompt({
   role: string | null;
   experiences: PromptExperience[];
   references: PromptReference[];
+  sharedReferences?: PromptSharedReference[];
 }): string {
   const lines: string[] = [];
 
@@ -84,6 +93,16 @@ export function buildEssayPrompt({
     });
   }
 
+  if (sharedReferences.length > 0) {
+    lines.push("## 다른 사람 자소서 (구성·흐름만 참고, 절대 베끼지 마라)");
+    sharedReferences.forEach((ref, index) => {
+      lines.push(`### 남의 글 ${index + 1} — ${ref.company}`);
+      lines.push(`- 문항: ${ref.question}`);
+      lines.push(`- 답변: ${ref.answer}`);
+      lines.push("");
+    });
+  }
+
   lines.push("## 반드시 지킬 규칙");
   lines.push(
     "1. **제공한 경험에 없는 사실·수치는 절대 쓰지 마라.** 지어내면 면접에서 그대로 무너진다.",
@@ -99,6 +118,11 @@ export function buildEssayPrompt({
   lines.push("4. 회사 이름을 억지로 반복하지 마라.");
   lines.push("5. 과장된 표현(최고, 혁신적, 열정적)보다 구체적인 사실을 써라.");
   lines.push("6. 결과를 먼저 말하고 과정을 설명하는 순서로 써라.");
+  if (sharedReferences.length > 0) {
+    lines.push(
+      "7. **다른 사람 자소서의 문장을 그대로 가져오지 마라.** 구성과 흐름만 참고하고, 내용은 위의 내 경험으로만 채워라. 표절 검사에 걸린다.",
+    );
+  }
   lines.push("");
   lines.push("위 조건으로 자기소개서 답변 초안을 하나 써 줘.");
 

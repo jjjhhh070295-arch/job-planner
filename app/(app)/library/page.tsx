@@ -8,11 +8,13 @@ import {
   updateEssay,
 } from "./actions";
 import { DeleteRowButton } from "@/components/delete-row-button";
+import { LibraryTabs } from "@/components/library-tabs";
 import { EditableRow } from "@/components/editable-row";
 import { EssayFinalToggle } from "@/components/essay-final-toggle";
 import {
   PromptBuilder,
   type ExperienceOption,
+  type SharedReferenceOption,
 } from "@/components/prompt-builder";
 import { PageShell } from "@/components/page-shell";
 import { RecordForm, type Field } from "@/components/record-form";
@@ -133,8 +135,9 @@ export default async function LibraryPage({
       .eq("user_id", userId),
   ]);
 
-  // 프롬프트에 넣을 재료. 경험과 최종본 자소서는 AI 로 보내지 않고 화면에서 조립만 한다.
-  const [experienceResult, referenceResult] = await Promise.all([
+  // 프롬프트에 넣을 재료. 경험과 자소서 원문은 AI 로 보내지 않고 화면에서 조립만 한다.
+  // 공용 자소서도 마찬가지다 — 남이 쓴 글이라 더더욱 보내지 않는다 (CLAUDE.md 3장 5번).
+  const [experienceResult, referenceResult, sharedResult] = await Promise.all([
     supabase
       .from("experiences")
       .select("*")
@@ -147,6 +150,12 @@ export default async function LibraryPage({
       .eq("is_final", true)
       .not("answer", "is", null)
       .limit(20),
+    supabase
+      .from("shared_essays")
+      .select("id, company, question, answer")
+      .eq("visibility", "all")
+      .order("created_at", { ascending: false })
+      .limit(30),
   ]);
 
   const experienceOptions: ExperienceOption[] = (experienceResult.data ?? []).map(
@@ -173,6 +182,23 @@ export default async function LibraryPage({
     const r = row as { id: string; question: string; answer: string };
     return { id: r.id, question: r.question, answer: r.answer };
   });
+
+  const sharedOptions: SharedReferenceOption[] = (sharedResult.data ?? []).map(
+    (row) => {
+      const r = row as {
+        id: string;
+        company: string;
+        question: string;
+        answer: string;
+      };
+      return {
+        id: r.id,
+        company: r.company,
+        question: r.question,
+        answer: r.answer,
+      };
+    },
+  );
 
   const essays = (essayResult.data ?? []) as Essay[];
   let interviewQuestions = (interviewResult.data ?? []) as InterviewQuestion[];
@@ -248,6 +274,8 @@ export default async function LibraryPage({
       title="라이브러리"
       description="써 둔 자소서와 받았던 면접 질문을 한곳에서 찾습니다."
     >
+      <LibraryTabs />
+
       {/* ---------------- 검색 ---------------- */}
       <form method="get" className="flex flex-col gap-2">
         <input
@@ -422,6 +450,7 @@ export default async function LibraryPage({
                           references={referenceOptions.filter(
                             (r) => r.id !== essay.id,
                           )}
+                          sharedReferences={sharedOptions}
                           saveDraft={saveEssayDraft}
                         />
                       </div>

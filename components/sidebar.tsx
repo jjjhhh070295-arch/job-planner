@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BellRing,
+  FileStack,
   KeyRound,
   MessageSquare,
   MessagesSquare,
@@ -93,6 +94,10 @@ export function Sidebar({ displayName, username, isAdmin }: Props) {
             <Link href="/admin/feedback" className={subLink}>
               <MessageSquare className="size-4 shrink-0" aria-hidden />
               받은 의견
+            </Link>
+            <Link href="/admin/shared-essays" className={subLink}>
+              <FileStack className="size-4 shrink-0" aria-hidden />
+              공용 자소서
             </Link>
             <Link href="/admin/exams" className={subLink}>
               <CalendarCheck className="size-4 shrink-0" aria-hidden />

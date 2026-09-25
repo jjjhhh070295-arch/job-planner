@@ -30,6 +30,14 @@ export type ReferenceOption = {
   answer: string;
 };
 
+/** 공용 자소서 — 남이 쓴 글. 문체·구성 참고용으로만 고를 수 있다. */
+export type SharedReferenceOption = {
+  id: string;
+  company: string;
+  question: string;
+  answer: string;
+};
+
 /**
  * 자소서 초안용 프롬프트를 만들어 클립보드에 넣는다.
  * 경험과 자소서 원문은 우리 서버에서 AI 로 보내지 않는다 (CLAUDE.md 3장 5번).
@@ -43,6 +51,7 @@ export function PromptBuilder({
   role,
   experiences,
   references,
+  sharedReferences = [],
   saveDraft,
 }: {
   essayId: string;
@@ -52,11 +61,13 @@ export function PromptBuilder({
   role: string | null;
   experiences: ExperienceOption[];
   references: ReferenceOption[];
+  sharedReferences?: SharedReferenceOption[];
   saveDraft: (prev: FormState, formData: FormData) => Promise<FormState>;
 }) {
   const [open, setOpen] = useState(false);
   const [pickedExp, setPickedExp] = useState<string[]>([]);
   const [pickedRef, setPickedRef] = useState<string[]>([]);
+  const [pickedShared, setPickedShared] = useState<string[]>([]);
   const [copied, setCopied] = useState(false);
   const [state, action, pending] = useActionState(saveDraft, null);
 
@@ -86,8 +97,26 @@ export function PromptBuilder({
         references: references
           .filter((r) => pickedRef.includes(r.id))
           .map((r) => ({ question: r.question, answer: r.answer })),
+        sharedReferences: sharedReferences
+          .filter((r) => pickedShared.includes(r.id))
+          .map((r) => ({
+            company: r.company,
+            question: r.question,
+            answer: r.answer,
+          })),
       }),
-    [question, charLimit, company, role, experiences, references, pickedExp, pickedRef],
+    [
+      question,
+      charLimit,
+      company,
+      role,
+      experiences,
+      references,
+      sharedReferences,
+      pickedExp,
+      pickedRef,
+      pickedShared,
+    ],
   );
 
   function toggle(list: string[], id: string): string[] {
@@ -179,6 +208,45 @@ export function PromptBuilder({
                       />
                       <span className="min-w-0 flex-1 truncate text-sm">
                         {ref.question}
+                      </span>
+                    </label>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
+          {/* 공용 자소서 고르기 */}
+          {sharedReferences.length > 0 ? (
+            <div>
+              <p className="mb-1 text-sm font-medium text-ink-700">
+                공용 자소서 (남의 글){" "}
+                <span className="text-ink-400">
+                  ({pickedShared.length}개 선택)
+                </span>
+              </p>
+              <p className="mb-2 text-xs text-danger-700">
+                구성·흐름만 참고용입니다. 문장을 그대로 쓰면 표절 검사에 걸립니다.
+              </p>
+              <ul className="flex flex-col gap-1.5">
+                {sharedReferences.map((ref) => (
+                  <li key={ref.id}>
+                    <label className="flex items-start gap-2.5 rounded-lg border border-line p-2.5">
+                      <input
+                        type="checkbox"
+                        checked={pickedShared.includes(ref.id)}
+                        onChange={() =>
+                          setPickedShared((list) => toggle(list, ref.id))
+                        }
+                        className="mt-0.5 size-5 shrink-0 accent-brand-600"
+                      />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm">
+                          {ref.question}
+                        </span>
+                        <span className="block truncate text-xs text-ink-400">
+                          {ref.company}
+                        </span>
                       </span>
                     </label>
                   </li>
