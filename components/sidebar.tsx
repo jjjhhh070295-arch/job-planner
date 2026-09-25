@@ -8,6 +8,7 @@ import {
   MessagesSquare,
   Route,
   Settings,
+  Activity,
   Building2,
   BookOpenCheck,
   Share2,
@@ -99,6 +100,10 @@ export function Sidebar({ displayName, username, isAdmin }: Props) {
             <Link href="/admin/dart" className={subLink}>
               <Building2 className="size-4 shrink-0" aria-hidden />
               DART 기업 목록
+            </Link>
+            <Link href="/admin/health" className={subLink}>
+              <Activity className="size-4 shrink-0" aria-hidden />
+              서버 점검
             </Link>
           </>
         ) : null}
