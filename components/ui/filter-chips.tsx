@@ -39,10 +39,10 @@ export function FilterChips({
               aria-pressed={active}
               onClick={() => onChange(chip.value)}
               className={
-                "inline-flex h-11 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-sm font-medium " +
+                "inline-flex h-11 shrink-0 items-center gap-1.5 rounded-lg border px-3.5 text-sm font-semibold " +
                 (active
                   ? "border-brand-600 bg-brand-600 text-white"
-                  : "border-line bg-surface text-ink-700 hover:bg-muted-100")
+                  : "border-line bg-surface text-ink-700 hover:bg-header")
               }
             >
               {chip.label}

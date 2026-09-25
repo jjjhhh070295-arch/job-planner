@@ -11,7 +11,16 @@ import { EditableTableRow } from "@/components/editable-table-row";
 import { type Field } from "@/components/form-fields";
 import { StatusSelect } from "@/components/status-select";
 import { FilterChips } from "@/components/ui/filter-chips";
-import { EmptyState, Tag, inputClass, type Tone } from "@/components/ui/primitives";
+import {
+  EmptyState,
+  Tag,
+  inputClass,
+  tableClass,
+  tdClass,
+  thClass,
+  theadClass,
+  type Tone,
+} from "@/components/ui/primitives";
 import { STATUSES, isClosed } from "@/lib/application-status";
 import { updateApplicationStatus } from "./actions";
 
@@ -244,19 +253,19 @@ export function ApplicationsView({
   );
 
   const table = (
-    <div className="overflow-x-auto rounded-xl border border-line bg-surface">
-      <table className="w-full min-w-[44rem] text-sm">
-        <thead className="border-b border-line bg-muted-100 text-left text-xs text-ink-500">
+    <div className="overflow-x-auto rounded-lg border border-line bg-surface shadow-card">
+      <table className={tableClass + " min-w-[44rem]"}>
+        <thead className={theadClass}>
           <tr>
-            <th className="px-3 py-2.5 font-medium">기업</th>
-            <th className="px-3 py-2.5 font-medium">직무</th>
-            <th className="px-3 py-2.5 font-medium">시즌</th>
-            <th className="px-3 py-2.5 font-medium">마감</th>
-            <th className="px-3 py-2.5 font-medium">단계</th>
-            <th className="px-3 py-2.5" />
+            <th className={thClass}>기업</th>
+            <th className={thClass}>직무</th>
+            <th className={thClass}>시즌</th>
+            <th className={thClass}>마감</th>
+            <th className={thClass}>단계</th>
+            <th className={thClass} />
           </tr>
         </thead>
-        <tbody className="divide-y divide-line">
+        <tbody>
           {visible.map((item) => (
             <EditableTableRow
               key={item.id}
@@ -282,7 +291,7 @@ export function ApplicationsView({
                 />
               }
             >
-              <td className="px-3 py-2.5 font-medium">
+              <td className={tdClass + " font-medium"}>
                 <Link
                   href={`/applications/${item.id}`}
                   className="hover:underline"
@@ -290,9 +299,9 @@ export function ApplicationsView({
                   {item.company}
                 </Link>
               </td>
-              <td className="px-3 py-2.5 text-ink-500">{item.role ?? "—"}</td>
-              <td className="px-3 py-2.5 text-ink-500">{item.season ?? "—"}</td>
-              <td className="px-3 py-2.5">
+              <td className={tdClass + " text-ink-500"}>{item.role ?? "—"}</td>
+              <td className={tdClass + " text-ink-500"}>{item.season ?? "—"}</td>
+              <td className={tdClass}>
                 <div className="flex items-center gap-1.5">
                   <span className="text-ink-500">
                     {item.deadlineText ?? "—"}
@@ -300,7 +309,7 @@ export function ApplicationsView({
                   <DeadlineTag item={item} />
                 </div>
               </td>
-              <td className="px-3 py-2.5">
+              <td className={tdClass}>
                 <StatusSelect
                   action={updateApplicationStatus}
                   id={item.id}
