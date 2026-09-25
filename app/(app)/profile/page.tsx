@@ -15,6 +15,9 @@ import { ProfileImport } from "@/components/profile-import";
 import { EditableRow } from "@/components/editable-row";
 import { PageShell } from "@/components/page-shell";
 import { RecordForm, type Field } from "@/components/record-form";
+import { SettingsMenu } from "@/components/settings-menu";
+import { getCurrentProfile } from "@/lib/auth/current-user";
+import { isAdminUsername } from "@/lib/supabase/admin";
 import { dDayLabel, formatPeriod, urgencyOf } from "@/lib/date";
 import type { AttachmentRow } from "@/lib/attachments";
 import { createOwnClient } from "@/lib/supabase/server";
@@ -182,6 +185,11 @@ function Empty({ text }: { text: string }) {
 export default async function ProfilePage() {
   const { supabase, userId } = await createOwnClient();
 
+  // 모바일에는 사이드바가 없어서 설정으로 갈 길이 없다.
+  // 이 화면 오른쪽 위 톱니바퀴가 그 자리를 대신한다.
+  const profile = await getCurrentProfile();
+  const isAdmin = profile ? isAdminUsername(profile.username) : false;
+
   // RLS 덕분에 본인 것만 돌아온다.
   const [educationResult, specResult, experienceResult, examResult] =
     await Promise.all([
@@ -243,6 +251,7 @@ export default async function ProfilePage() {
     <PageShell
       title="프로필"
       description="자소서를 쓸 때 꺼내 쓸 재료를 모아 둡니다."
+      actions={<SettingsMenu isAdmin={isAdmin} />}
     >
       {education.length === 0 && experiences.length === 0 ? (
         <div className="rounded-xl border border-brand-200 bg-brand-50/50 p-4">

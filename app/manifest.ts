@@ -7,13 +7,13 @@ import type { MetadataRoute } from "next";
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "취업 플래너",
-    short_name: "취업플래너",
+    short_name: "취업 플래너",
     description: "지원 현황, 자소서, 면접 복기, 공부 기록을 한곳에서 관리합니다.",
     start_url: "/",
     scope: "/",
     display: "standalone",
     orientation: "portrait",
-    background_color: "#f8fafc",
+    background_color: "#f2f5f9",
     theme_color: "#2563eb",
     lang: "ko",
     icons: [

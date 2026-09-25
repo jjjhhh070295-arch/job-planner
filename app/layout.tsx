@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   // 아이폰에서 홈 화면에 추가했을 때 주소창 없이 앱처럼 뜨게 한다.
   appleWebApp: {
     capable: true,
-    title: "취업플래너",
+    title: "취업 플래너",
     statusBarStyle: "default",
   },
   icons: {
