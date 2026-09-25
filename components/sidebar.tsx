@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  BellRing,
   KeyRound,
   MessageSquare,
   MessagesSquare,
@@ -110,6 +111,10 @@ export function Sidebar({ displayName, username, isAdmin }: Props) {
         <Link href="/settings" className={subLink}>
           <Settings className="size-4 shrink-0" aria-hidden />
           설정
+        </Link>
+        <Link href="/settings/notifications" className={subLink}>
+          <BellRing className="size-4 shrink-0" aria-hidden />
+          알림
         </Link>
         <Link href="/settings/password" className={subLink}>
           <KeyRound className="size-4 shrink-0" aria-hidden />

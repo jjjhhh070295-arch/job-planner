@@ -33,6 +33,11 @@ export function toTimeInput(iso: string | null | undefined): string {
   return `${get("hour")}:${get("minute")}`;
 }
 
+/** 서울 기준 지금 시각 "HH:MM" */
+export function nowTimeInSeoul(): string {
+  return toTimeInput(new Date().toISOString());
+}
+
 /** 서울 기준 오늘 날짜 "YYYY-MM-DD" */
 export function todayInSeoul(): string {
   return seoulDateString(new Date());

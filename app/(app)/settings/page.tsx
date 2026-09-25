@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { BellRing } from "lucide-react";
 
 import {
   DeleteAccountForm,
@@ -30,6 +31,20 @@ export default async function SettingsPage() {
           </Link>{" "}
           에서 바꿀 수 있습니다.
         </p>
+      </Card>
+
+      <Card>
+        <CardHeader title="알림" />
+        <p className="mb-3 text-sm text-ink-500">
+          아침 요약과 일정 알림을 켜고 끌 수 있습니다.
+        </p>
+        <Link
+          href="/settings/notifications"
+          className="inline-flex h-11 items-center gap-2 rounded-xl border border-line px-4 text-sm font-medium text-ink-700 hover:bg-muted-50"
+        >
+          <BellRing className="size-4" aria-hidden />
+          알림 설정 열기
+        </Link>
       </Card>
 
       <Card>
