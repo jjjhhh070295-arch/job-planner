@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { getCurrentProfile } from "@/lib/auth/current-user";
 import { isValidDisplayName } from "@/lib/auth/username";
 import type { FormState } from "@/lib/form-state";
+import { ATTACHMENT_BUCKET } from "@/lib/attachments";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -89,6 +90,29 @@ export async function deleteAccount(
   }
 
   const admin = createAdminClient();
+
+  // DB 행은 on delete cascade 로 사라지지만 올린 파일은 따로 지워야 한다.
+  // 계정을 먼저 지우면 파일을 찾을 길이 없어지므로 파일부터 치운다.
+  for (const bucket of [ATTACHMENT_BUCKET, "study-captures"]) {
+    const { data: files, error: listError } = await admin.storage
+      .from(bucket)
+      .list(profile.userId, { limit: 1000 });
+
+    if (listError) {
+      console.error(`[settings] ${bucket} 목록 조회 실패`, listError.message);
+      continue;
+    }
+    if (!files || files.length === 0) continue;
+
+    const paths = files.map((file) => `${profile.userId}/${file.name}`);
+    const { error: removeError } = await admin.storage
+      .from(bucket)
+      .remove(paths);
+    if (removeError) {
+      console.error(`[settings] ${bucket} 파일 삭제 실패`, removeError.message);
+    }
+  }
+
   const { error } = await admin.auth.admin.deleteUser(profile.userId);
 
   if (error) {

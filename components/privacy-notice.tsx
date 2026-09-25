@@ -25,6 +25,18 @@ export function PrivacyNotice() {
       </div>
 
       <div>
+        <p className="font-bold">첨부 파일</p>
+        <p className="mt-1 text-ink-500">
+          증명서 같은 파일을 올릴 수 있습니다. 비공개 보관함에 들어가고, 볼
+          때마다 1분짜리 임시 링크를 새로 만듭니다.{" "}
+          <strong className="text-ink-900">
+            첨부는 다른 사람에게 공유되지 않습니다.
+          </strong>{" "}
+          주민등록번호처럼 민감한 부분은 가리고 올려 주세요.
+        </p>
+      </div>
+
+      <div>
         <p className="font-bold">AI에 보내는 것</p>
         <p className="mt-1 text-ink-500">
           붙여넣은 <strong>채용공고 글</strong>, 자소서{" "}

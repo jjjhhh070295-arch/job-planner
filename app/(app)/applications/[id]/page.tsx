@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronLeft, ExternalLink } from "lucide-react";
 
+import { AttachmentPanel } from "@/components/attachment-panel";
 import { PageShell } from "@/components/page-shell";
 import { Card, CardHeader, EmptyState, Tag } from "@/components/ui/primitives";
 import { isClosed } from "@/lib/application-status";
@@ -12,7 +13,8 @@ import {
   toDateInput,
 } from "@/lib/date";
 import { resultTone } from "@/lib/interview";
-import { createClient } from "@/lib/supabase/server";
+import type { AttachmentRow } from "@/lib/attachments";
+import { createClient, createOwnClient } from "@/lib/supabase/server";
 
 const TABS = [
   { value: "posting", label: "공고·일정" },
@@ -32,7 +34,7 @@ export default async function ApplicationDetailPage({
   const { tab: rawTab } = await searchParams;
   const tab = TABS.some((t) => t.value === rawTab) ? rawTab! : "posting";
 
-  const supabase = await createClient();
+  const { supabase, userId } = await createOwnClient();
 
   // RLS 덕분에 남의 지원 건은 아예 조회되지 않는다.
   const { data: app } = await supabase
@@ -58,6 +60,15 @@ export default async function ApplicationDetailPage({
 
   const essays = essayResult.data ?? [];
   const interviews = interviewResult.data ?? [];
+
+  // 첨부는 공유 대상이 아니다. 내 것이 아니면 RLS 가 아무것도 내려 주지 않는다.
+  const { data: attachmentData } = await supabase
+    .from("attachments")
+    .select("id, kind, label, storage_path, url, mime_type, size_bytes")
+    .eq("application_id", id)
+    .order("created_at");
+  const attachments = (attachmentData ?? []) as AttachmentRow[];
+  const isMine = (app.user_id as string) === userId;
 
   const deadline = app.deadline as string | null;
   const days = deadline ? daysUntilTimestamp(deadline) : null;
@@ -152,6 +163,18 @@ export default async function ApplicationDetailPage({
             <p className="mt-3 border-t border-line pt-3 wrap-anywhere whitespace-pre-wrap text-sm text-ink-700">
               {app.memo as string}
             </p>
+          ) : null}
+
+          {isMine ? (
+            <div className="mt-3 border-t border-line pt-3">
+              <p className="text-sm font-medium text-ink-700">첨부</p>
+              <AttachmentPanel
+                ownerKind="application"
+                ownerId={id}
+                items={attachments}
+                userId={userId}
+              />
+            </div>
           ) : null}
 
           {app.posting_text ? (

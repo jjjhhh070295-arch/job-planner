@@ -8,6 +8,7 @@ import {
   updateExperience,
   updateSpec,
 } from "./actions";
+import { AttachmentPanel } from "@/components/attachment-panel";
 import { DeleteRowButton } from "@/components/delete-row-button";
 import { HiddenValue } from "@/components/hidden-value";
 import { ProfileImport } from "@/components/profile-import";
@@ -15,7 +16,8 @@ import { EditableRow } from "@/components/editable-row";
 import { PageShell } from "@/components/page-shell";
 import { RecordForm, type Field } from "@/components/record-form";
 import { dDayLabel, formatPeriod, urgencyOf } from "@/lib/date";
-import { createClient } from "@/lib/supabase/server";
+import type { AttachmentRow } from "@/lib/attachments";
+import { createOwnClient } from "@/lib/supabase/server";
 
 type Education = {
   id: string;
@@ -178,7 +180,7 @@ function Empty({ text }: { text: string }) {
 }
 
 export default async function ProfilePage() {
-  const supabase = await createClient();
+  const { supabase, userId } = await createOwnClient();
 
   // RLS 덕분에 본인 것만 돌아온다.
   const [educationResult, specResult, experienceResult, examResult] =
@@ -192,6 +194,31 @@ export default async function ProfilePage() {
         .select("id, name, round, exam_date")
         .order("exam_date", { ascending: true, nullsFirst: false }),
     ]);
+
+  // 첨부는 공유 대상이 아니라 RLS 가 본인 것만 내려 준다.
+  const { data: attachmentData } = await supabase
+    .from("attachments")
+    .select(
+      "id, kind, label, storage_path, url, mime_type, size_bytes, spec_id, experience_id",
+    )
+    .order("created_at");
+
+  const attachmentsBySpec = new Map<string, AttachmentRow[]>();
+  const attachmentsByExperience = new Map<string, AttachmentRow[]>();
+  for (const row of attachmentData ?? []) {
+    const r = row as AttachmentRow & {
+      spec_id: string | null;
+      experience_id: string | null;
+    };
+    const target = r.spec_id
+      ? attachmentsBySpec
+      : r.experience_id
+        ? attachmentsByExperience
+        : null;
+    const key = r.spec_id ?? r.experience_id;
+    if (!target || !key) continue;
+    target.set(key, [...(target.get(key) ?? []), r]);
+  }
 
   const examOptions = (examResult.data ?? []).map((row) => {
     const r = row as {
@@ -365,6 +392,13 @@ export default async function ProfilePage() {
                         value={row.license_number}
                       />
                     ) : null}
+
+                    <AttachmentPanel
+                      ownerKind="spec"
+                      ownerId={row.id}
+                      items={attachmentsBySpec.get(row.id) ?? []}
+                      userId={userId}
+                    />
                   </div>
                   </EditableRow>
                 </li>
@@ -454,6 +488,13 @@ export default async function ProfilePage() {
                         </div>
                       ))}
                   </dl>
+
+                  <AttachmentPanel
+                    ownerKind="experience"
+                    ownerId={row.id}
+                    items={attachmentsByExperience.get(row.id) ?? []}
+                    userId={userId}
+                  />
                 </div>
                 </EditableRow>
               </li>
