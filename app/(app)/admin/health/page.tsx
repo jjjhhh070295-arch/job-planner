@@ -68,6 +68,30 @@ export default async function AdminHealthPage() {
       note: "없으면 기업분석 탭이 안내 문구만 표시합니다",
     },
     {
+      name: "VAPID_PUBLIC_KEY",
+      set: isSet("VAPID_PUBLIC_KEY"),
+      required: false,
+      note: "없으면 알림 켜기 버튼이 오류를 냅니다",
+    },
+    {
+      name: "VAPID_PRIVATE_KEY",
+      set: isSet("VAPID_PRIVATE_KEY"),
+      required: false,
+      note: "없으면 알림이 한 통도 가지 않습니다",
+    },
+    {
+      name: "VAPID_SUBJECT",
+      set: isSet("VAPID_SUBJECT"),
+      required: false,
+      note: "없으면 기본 연락처로 동작합니다",
+    },
+    {
+      name: "CRON_SECRET",
+      set: isSet("CRON_SECRET"),
+      required: false,
+      note: "없으면 예약 발송이 거절됩니다",
+    },
+    {
       name: "GEMINI_MODEL",
       set: isSet("GEMINI_MODEL"),
       required: false,

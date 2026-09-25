@@ -42,3 +42,6 @@ next-env.d.ts
 
 # claude code 로컬 설정 (내 PC 알림 훅 등)
 .claude/settings.local.json
+
+# DB 접속용 임시 스크립트 (pg 를 쓰려면 프로젝트 안에 둬야 해서 생깁니다)
+/_*.mjs
