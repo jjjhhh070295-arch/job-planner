@@ -1,12 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import { Geist } from "next/font/google";
 import { ServiceWorker } from "@/components/service-worker";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+// 본문 글꼴은 Pretendard 다. globals.css 에서 받아 온다.
+// next/font 는 구글 폰트만 다루는데 Pretendard 는 거기에 없다.
 
 export const metadata: Metadata = {
   title: "취업 플래너",
@@ -34,7 +31,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="ko" className={`${geistSans.variable} h-full antialiased`}>
+    <html lang="ko" className="h-full antialiased">
       <body className="flex min-h-full flex-col">
         {children}
         <ServiceWorker />

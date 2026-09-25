@@ -1,3 +1,8 @@
+/* Pretendard — 한글이 많은 화면에 맞는 본문 글꼴.
+   낱자 단위로 잘라 받는 subset 판이라 필요한 글자만 내려받는다.
+   CSS 규칙상 @import 는 맨 위에 와야 한다. */
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css");
+
 @import "tailwindcss";
 
 /* ============================================================
@@ -12,15 +17,20 @@
   --color-brand-500: #3b82f6;
   --color-brand-600: #2563eb;
   --color-brand-700: #1d4ed8;
+  /* 로고·제목에 쓰는 짙은 남색 */
+  --color-brand-900: #17325e;
 
   --color-ink-900: #0f172a;
   --color-ink-700: #334155;
   --color-ink-500: #64748b;
   --color-ink-400: #94a3b8;
 
-  --color-line: #e2e8f0;
+  --color-line: #e5e9f0;
   --color-surface: #ffffff;
-  --color-canvas: #f8fafc;
+  /* 카드가 떠 보이도록 바탕은 아주 옅은 청회색 */
+  --color-canvas: #f2f5f9;
+  /* 표 머리글 줄 */
+  --color-header: #f7f9fc;
 
   /* 마감 임박 */
   --color-danger-50: #fef2f2;
@@ -37,7 +47,13 @@
   --color-muted-100: #f1f5f9;
   --color-muted-600: #475569;
 
-  --font-sans: var(--font-geist-sans);
+  /* 그림자는 거의 쓰지 않는다. 선으로 구분하고, 떠 있어야 하는 것만 얕게 띄운다. */
+  --shadow-card: 0 1px 2px 0 rgb(15 23 42 / 0.04);
+  --shadow-pop: 0 8px 24px -6px rgb(15 23 42 / 0.16);
+
+  --font-sans:
+    "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont,
+    system-ui, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
 }
 
 @layer base {
@@ -49,7 +65,9 @@
   body {
     background: var(--color-canvas);
     color: var(--color-ink-900);
-    font-family: var(--font-sans), system-ui, sans-serif;
+    font-family: var(--font-sans);
+    /* 한글은 낱자 간격이 조금 좁아야 빽빽해 보이지 않는다 */
+    letter-spacing: -0.01em;
   }
 
   /* 아이폰 사파리는 16px 미만 입력칸에 초점이 가면 화면을 확대한다.
@@ -65,6 +83,12 @@
   a[role="button"],
   summary {
     touch-action: manipulation;
+  }
+
+  /* 숫자는 자리수가 흔들리지 않게 고정폭으로 */
+  th,
+  td {
+    font-variant-numeric: tabular-nums;
   }
 }
 
@@ -93,5 +117,10 @@
   .tap {
     min-height: 44px;
     min-width: 44px;
+  }
+
+  /* 큰 숫자는 자리수가 바뀌어도 폭이 흔들리지 않게 */
+  .nums {
+    font-variant-numeric: tabular-nums;
   }
 }

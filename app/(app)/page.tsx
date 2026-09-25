@@ -9,6 +9,7 @@ import {
   CardHeader,
   EmptyState,
   StatCard,
+  StatGrid,
   Tag,
 } from "@/components/ui/primitives";
 import { isClosed } from "@/lib/application-status";
@@ -188,7 +189,7 @@ export default async function HomePage() {
       description={`오늘은 ${today} 입니다.`}
     >
       {/* ---------------- 요약 카드 4개 ---------------- */}
-      <div className="grid grid-cols-2 gap-2 md:grid-cols-4 md:gap-3">
+      <StatGrid>
         <StatCard
           label="진행 중 지원"
           value={inProgress.length}
@@ -227,7 +228,7 @@ export default async function HomePage() {
           }
           href="/roadmap"
         />
-      </div>
+      </StatGrid>
 
       {/* ---------------- 오늘의 일정 + 미니 달력 ---------------- */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_20rem]">
