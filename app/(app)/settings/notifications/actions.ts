@@ -57,42 +57,87 @@ export async function saveNotificationSettings(
   return { ok: true, message: "저장했습니다." };
 }
 
-/** 브라우저가 만든 구독 정보를 기록한다. */
+/**
+ * 브라우저가 만든 구독 정보를 기록한다.
+ *
+ * 여기서 오류를 던지면 배포본에서는 "An error occurred..." 같은 뭉뚱그린 문구만
+ * 브라우저에 도착해서 원인을 알 수 없다. 그래서 전부 붙잡아 이유를 담아 돌려준다.
+ */
 export async function saveSubscription(
   endpoint: string,
   keys: { p256dh: string; auth: string },
   deviceLabel: string,
-): Promise<{ ok: boolean; message: string }> {
-  const { supabase, userId } = await requireUser();
+): Promise<{ ok: boolean; message: string; saved?: number }> {
+  try {
+    if (!endpoint || !keys?.p256dh || !keys?.auth) {
+      return {
+        ok: false,
+        message: "브라우저가 준 구독 정보가 비어 있습니다.",
+      };
+    }
 
-  if (!endpoint || !keys?.p256dh || !keys?.auth) {
-    return { ok: false, message: "구독 정보가 올바르지 않습니다." };
+    const profile = await getCurrentProfile();
+    if (!profile) {
+      return {
+        ok: false,
+        message:
+          "로그인이 풀렸습니다. 새로고침해서 다시 로그인한 뒤 눌러 주세요.",
+      };
+    }
+
+    const supabase = await createClient();
+    const userId = profile.userId;
+
+    // 같은 기기에서 다시 켜면 endpoint 가 같으므로 덮어쓴다.
+    const { error } = await supabase.from("push_subscriptions").upsert(
+      {
+        user_id: userId,
+        endpoint,
+        keys,
+        device_label: deviceLabel.slice(0, 60),
+        fail_count: 0,
+      },
+      { onConflict: "endpoint" },
+    );
+
+    if (error) {
+      console.error("[notifications] 구독 저장 실패", error.code, error.message);
+      return {
+        ok: false,
+        message: `DB 저장 거절 (${error.code ?? "코드없음"}): ${error.message}`,
+      };
+    }
+
+    // 설정 행이 없으면 기본값으로 만들어 둔다.
+    await supabase
+      .from("notification_settings")
+      .upsert({ user_id: userId }, { onConflict: "user_id", ignoreDuplicates: true });
+
+    // 진짜로 들어갔는지 다시 세어 본다. 저장된 줄 알았는데 없는 경우를 걸러낸다.
+    const { count } = await supabase
+      .from("push_subscriptions")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId);
+
+    if (!count) {
+      return {
+        ok: false,
+        message:
+          "저장 요청은 통과했는데 기기 목록에 남지 않았습니다. 권한(RLS) 문제일 수 있습니다.",
+      };
+    }
+
+    revalidatePath("/settings/notifications");
+    return {
+      ok: true,
+      message: "이 기기에서 알림을 받습니다.",
+      saved: count,
+    };
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    console.error("[notifications] 구독 저장 중 예외", detail);
+    return { ok: false, message: `서버 오류: ${detail}` };
   }
-
-  // 같은 기기에서 다시 켜면 endpoint 가 같으므로 덮어쓴다.
-  const { error } = await supabase.from("push_subscriptions").upsert(
-    {
-      user_id: userId,
-      endpoint,
-      keys,
-      device_label: deviceLabel.slice(0, 60),
-      fail_count: 0,
-    },
-    { onConflict: "endpoint" },
-  );
-
-  if (error) {
-    console.error("[notifications] 구독 저장 실패", error.message);
-    return { ok: false, message: "이 기기를 등록하지 못했습니다." };
-  }
-
-  // 설정 행이 없으면 기본값으로 만들어 둔다.
-  await supabase
-    .from("notification_settings")
-    .upsert({ user_id: userId }, { onConflict: "user_id", ignoreDuplicates: true });
-
-  revalidatePath("/settings/notifications");
-  return { ok: true, message: "이 기기에서 알림을 받습니다." };
 }
 
 export async function removeSubscription(formData: FormData): Promise<void> {
